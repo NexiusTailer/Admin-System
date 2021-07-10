@@ -70,7 +70,7 @@ The commands will work on any cmd processor! (except rCmd).
 `/sban` *[id]* - Silent ban  
 `/skick` *[id]* - Silent kick
 
-## Functions:
+## Functions
 If you have an accounts system, some functions below will be useful.
 
 public OnPlayerBan(playerid, gaveid, bool:sban)
