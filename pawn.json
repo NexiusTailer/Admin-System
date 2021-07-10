@@ -1,0 +1,24 @@
+{
+	"user": "NexiusTailer",
+	"repo": "Admin-System",
+	"dependencies": ["Open-GTO/foreach"],
+	"builds":
+	[
+		{
+			"name": "english",
+			"input": "English/admsys.inc",
+			"compiler":
+			{
+				"version": "3.10.8"
+			}
+		},
+		{
+			"name": "russian",
+			"input": "Russian/admsys.inc",
+			"compiler":
+			{
+				"version": "3.10.8"
+			}
+		}
+	]
+}
