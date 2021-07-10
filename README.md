@@ -13,8 +13,8 @@ This is the administration system that has a lot of opportunities and very simpl
 * Dynamic panel with suspected players
 
 ## Commands
-Some commands allow you to enter keywords instead of parameters, for example, "/spec off" will do the same as "/specoff".
-Also you can omit the parameters in some commands, so then the command will work on the one who typed it.
+Some commands allow you to enter keywords instead of parameters, for example, "/spec off" will do the same as "/specoff".  
+Also you can omit the parameters in some commands, so then the command will work on the one who typed it.  
 The commands will work on any cmd processor! (except rCmd).
 
 `/report` *[text]* - send an question/complaint to administration
@@ -106,7 +106,7 @@ IsPlayerAdminEx(playerid, lvl = 1)
 ```
 Parameters:
 playerid - The ID of the player whose admin level we want to check
-lvl - Players admin level we check (if not specified, will be equal to 1)
+lvl - Player's admin level we check (if not specified, will be equal to 1)
 
 Returns 1 if the player have the admin level equal to or greater than specified in the 'lvl'
 Returns 0 if the player does not have this admin level
@@ -124,7 +124,7 @@ SetPlayerAdminLevel(playerid, lvl)
 ```
 Parameters:
 playerid - The ID of the player for which you need to set the admin level
-lvl - The admin level you want to set the player
+lvl - The admin level you want to set to the player
 
 Returns 1 if the function executed successfully
 Returns 0 if the specified player is not connected
@@ -134,7 +134,7 @@ Returns -1 if the level is entered incorrectly
 SendMessageToAdmins(lvl, color, const msg[])
 ```
 Parameters:
-lvl - The admin level required to obtain this message
+lvl - The admin level required to receive this message
 color - The color of the message which will be sent
 msg - The string with the message
 
@@ -153,7 +153,7 @@ SetPlayerMuteTime(playerid, time)
 ```
 Parameters:
 playerid - The ID of the player for which you need to set the mute time
-time - The mute time (in seconds) you need to set the player
+time - The mute time (in seconds) you need to set to the player
 
 Returns 1 if the function executed successfully
 Returns 0 if the specified player is not connected
@@ -163,7 +163,7 @@ Returns -1 if the time is entered incorrectly
 AddPlayerInSuspectList(playerid)
 ```
 Parameters:
-playerid - The ID of the player which you want to add to the list of suspects
+playerid - The ID of the player which you want to add to the list of suspected
 
 Returns 1 if the function executed successfully
 Returns 0 if the specified player is not connected
@@ -172,7 +172,7 @@ Returns 0 if the specified player is not connected
 RemovePlayerFromSuspectList(playerid)
 ```
 Parameters:
-playerid - The ID of the player which should be removed from the list of suspects
+playerid - The ID of the player which should be removed from the list of suspected
 
 Returns 1 if the function executed successfully
 Returns 0 if the specified player is not connected
@@ -193,6 +193,12 @@ Include in your code and begin using the library:
 ```pawn
 #include <admsys>
 ```
+
+If you want to add admin rights saving after disconnection, use SetPlayerAdminLevel function (see "Functions"), add it into your account load and GetPlayerAdminLevel function into account save.
+
+If you want to add some actions when a player gets ban, kick or warn, add publics OnPlayerBan, OnPlayerKick and OnPlayerWarn in your gamemode.
+
+If you want to see anyone in the panel with suspected players, use AddPlayerInSuspectList function to add the player to the list, and RemovePlayerFromSuspectList to remove.
 
 ## Thanks
 DeimoS - ideas and suggestions  
