@@ -90,7 +90,7 @@ If you want to see anyone in the panel with suspected players, use AddPlayerInSu
 ## Functions
 If you have an accounts system, some functions below will be useful.
 
-**public OnPlayerBan(playerid, gaveid, bool:sban)**
+#### public OnPlayerBan(playerid, gaveid, bool:sban)
 ```
 Parameters:
 playerid - The ID of the player who will be banned
@@ -100,7 +100,7 @@ sban - If the ban is silent (true) or not (false)
 This callback does not return any values
 ```
 
-**public OnPlayerKick(playerid, gaveid, bool:skick)**
+#### public OnPlayerKick(playerid, gaveid, bool:skick)
 ```
 Parameters:
 playerid - The ID of the player who will be kicked
@@ -110,7 +110,7 @@ skick - If the kick is silent (true) or not (false)
 This callback does not return any values
 ```
 
-**public OnPlayerWarn(playerid, gaveid, count)**
+#### public OnPlayerWarn(playerid, gaveid, count)
 ```
 Parameters:
 playerid - The ID of the player who will be warned
@@ -120,7 +120,7 @@ count - The amount of warnings that 'playerid' have at the moment (including las
 This callback does not return any values
 ```
 
-**IsPlayerAdminEx(playerid, lvl = 1)**
+#### IsPlayerAdminEx(playerid, lvl = 1)
 ```
 Parameters:
 playerid - The ID of the player whose admin level we want to check
@@ -130,7 +130,7 @@ Returns 1 if the player have the admin level equal to or greater than specified 
 Returns 0 if the player does not have this admin level
 ```
 
-**GetPlayerAdminLevel(playerid)**
+#### GetPlayerAdminLevel(playerid)
 ```
 Parameters:
 playerid - The ID of the player whose admin level we want to get
@@ -138,7 +138,7 @@ playerid - The ID of the player whose admin level we want to get
 Returns the admin level of the specified player
 ```
 
-**SetPlayerAdminLevel(playerid, lvl)**
+#### SetPlayerAdminLevel(playerid, lvl)
 ```
 Parameters:
 playerid - The ID of the player for which you need to set the admin level
@@ -149,7 +149,7 @@ Returns 0 if the specified player is not connected
 Returns -1 if the level is entered incorrectly
 ```
 
-**SendMessageToAdmins(lvl, color, const msg[])**
+#### SendMessageToAdmins(lvl, color, const msg[])
 ```
 Parameters:
 lvl - The admin level required to receive this message
@@ -159,7 +159,7 @@ msg - The string with the message
 Always returns 1
 ```
 
-**GetPlayerMuteTime(playerid)**
+#### GetPlayerMuteTime(playerid)
 ```
 Parameters:
 playerid - The ID of the player whose remaining mute time you want to know
@@ -167,7 +167,7 @@ playerid - The ID of the player whose remaining mute time you want to know
 Returns the remained time of mute for the specified player in seconds (0 - is not muted)
 ```
 
-**SetPlayerMuteTime(playerid, time)**
+#### SetPlayerMuteTime(playerid, time)
 ```
 Parameters:
 playerid - The ID of the player for which you need to set the mute time
@@ -178,7 +178,7 @@ Returns 0 if the specified player is not connected
 Returns -1 if the time is entered incorrectly
 ```
 
-**AddPlayerInSuspectList(playerid)**
+#### AddPlayerInSuspectList(playerid)
 ```
 Parameters:
 playerid - The ID of the player which you want to add to the list of suspected
@@ -187,7 +187,7 @@ Returns 1 if the function executed successfully
 Returns 0 if the specified player is not connected
 ```
 
-**RemovePlayerFromSuspectList(playerid)**
+#### RemovePlayerFromSuspectList(playerid)
 ```
 Parameters:
 playerid - The ID of the player which should be removed from the list of suspected
@@ -196,7 +196,7 @@ Returns 1 if the function executed successfully
 Returns 0 if the specified player is not connected
 ```
 
-**UpdateSuspectList()**
+#### UpdateSuspectList()
 ```
 Returns the number of removed players from the list
 ```
