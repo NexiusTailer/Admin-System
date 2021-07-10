@@ -13,7 +13,7 @@ This is the administration system that has a lot of opportunities and very simpl
 * Dynamic panel with suspected players
 
 ## Commands
-Some commands allow you to enter keywords instead of parameters, for example, "/spec off" will do the same as "/specoff".  
+Some commands allow you to enter keywords instead of parameters, for example, "/spec off" will do the same as the command "/specoff".  
 Also you can omit the parameters in some commands, so then the command will work on the one who typed it.  
 The commands will work on any cmd processor! (except rCmd).
 
