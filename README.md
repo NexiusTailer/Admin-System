@@ -194,7 +194,7 @@ Include in your code and begin using the library:
 #include <admsys>
 ```
 
-If you want to add admin rights saving after disconnection, use SetPlayerAdminLevel function (see "Functions"), add it into your account load and GetPlayerAdminLevel function into account save.
+If you want to add admin rights saving after disconnection, use SetPlayerAdminLevel function (see "[Functions](README.md#functions)"), add it into your account load and GetPlayerAdminLevel function into account save.
 
 If you want to add some actions when a player gets ban, kick or warn, add publics OnPlayerBan, OnPlayerKick and OnPlayerWarn in your gamemode.
 
