@@ -70,6 +70,23 @@ The commands will work on any cmd processor! (except rCmd).
 `/sban` *[id]* - Silent ban  
 `/skick` *[id]* - Silent kick
 
+## How to install
+Simply install to your project:
+```bash
+sampctl package install NexiusTailer/Admin-System
+```
+
+Include in your code and begin using the library:
+```pawn
+#include <admsys>
+```
+
+If you want to add admin rights saving after disconnection, use SetPlayerAdminLevel function (see "[Functions](README.md#functions)"), add it into your account load and GetPlayerAdminLevel function into account save.
+
+If you want to add some actions when a player gets ban, kick or warn, add publics OnPlayerBan, OnPlayerKick and OnPlayerWarn in your gamemode.
+
+If you want to see anyone in the panel with suspected players, use AddPlayerInSuspectList function to add the player to the list, and RemovePlayerFromSuspectList to remove.
+
 ## Functions
 If you have an accounts system, some functions below will be useful.
 
@@ -183,23 +200,6 @@ Returns 0 if the specified player is not connected
 ```
 Returns the number of removed players from the list
 ```
-
-## How to install
-Simply install to your project:
-```bash
-sampctl package install NexiusTailer/Admin-System
-```
-
-Include in your code and begin using the library:
-```pawn
-#include <admsys>
-```
-
-If you want to add admin rights saving after disconnection, use SetPlayerAdminLevel function (see "[Functions](README.md#functions)"), add it into your account load and GetPlayerAdminLevel function into account save.
-
-If you want to add some actions when a player gets ban, kick or warn, add publics OnPlayerBan, OnPlayerKick and OnPlayerWarn in your gamemode.
-
-If you want to see anyone in the panel with suspected players, use AddPlayerInSuspectList function to add the player to the list, and RemovePlayerFromSuspectList to remove.
 
 ## Thanks
 DeimoS - ideas and suggestions  
