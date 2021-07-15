@@ -88,7 +88,7 @@ If you want to add some actions when a player gets ban, kick or warn, add public
 If you want to see anyone in the panel with suspected players, use AddPlayerInSuspectList function to add the player to the list, and RemovePlayerFromSuspectList to remove.
 
 ## Functions
-If you have an accounts system, some functions below will be useful.
+If you have accounts system, some functions below will be useful.
 
 #### public OnPlayerBan(playerid, gaveid, bool:sban)
 ```
