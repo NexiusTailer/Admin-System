@@ -54,6 +54,7 @@ The commands will work on any cmd processor! (except rCmd).
 `/sethealth` *[id]* *[health]* - Set health to player  
 `/setarmour` *[id]* *[armour]* - Set armour to player  
 `/setmoney` *[id]* *[money]* - Set money to player  
+`/setscore` *[id]* *[score]* - Set score to player  
 `/setskin` *[id]* *[skin id]* - Set skin to player  
 `/setint` *[id]* *[interior]* - Set interior to player  
 `/setvw` *[id]* *[number]* - Set virtual world to player  
@@ -202,5 +203,5 @@ Returns the number of removed players from the list
 ```
 
 ## Thanks
-DeimoS - ideas and suggestions  
+DeimoS, _leon_lacartez_, Kolor4dO - ideas and suggestions  
 Magic_York, Vitalik_Gonsor, RobertoYork, TheHero, Error4o4 - testing

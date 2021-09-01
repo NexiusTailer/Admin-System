@@ -1,4 +1,4 @@
-//Admin System by Nexius v2.6
+//Admin System by Nexius v2.7
 
 #if defined _admsys_included
 	#endinput
@@ -7,7 +7,7 @@
 
 #include <a_samp>
 
-#define	ADMSYS_VERSION						"2.6"
+#define	ADMSYS_VERSION						"2.7"
 
 #if !defined ADMSYS_SEND_ACTION_MSGS_TO_ALL
 	#define ADMSYS_SEND_ACTION_MSGS_TO_ALL		false
@@ -84,7 +84,8 @@ static const AdmSysCmds[][] =
 	"Уровень 4:\n",
 	"/sethealth [id] [здоровье] - Выдать здоровье игроку\n",
 	"/setarmour [id] [броня] - Выдать броню игроку\n",
-	"/setmoney [id] [деньги] - Выдать деньги игроку\n",
+	"/setmoney [id] [деньги] - Установить деньги игроку\n",
+	"/setscore [id] [очки] - Установить очки (уровень) игроку\n",
 	"/setskin [id] [id скина] - Установить скин игроку\n",
 	"/setint [id] [интерьер] - Установить игроку интерьер\n",
 	"/setvw [id] [номер] - Установить игроку виртуальный мир\n",
@@ -115,6 +116,7 @@ enum
 	ADMSYS_DIALOG_SET_HEALTH,
 	ADMSYS_DIALOG_SET_ARMOUR,
 	ADMSYS_DIALOG_SET_MONEY,
+	ADMSYS_DIALOG_SET_SCORE,
 	ADMSYS_DIALOG_CHANGE_SKIN,
 	ADMSYS_DIALOG_SET_INT,
 	ADMSYS_DIALOG_SET_VW,
@@ -174,7 +176,7 @@ enum asInfo
 static
 	AdmSysInfo[MAX_PLAYERS][asInfo],
 	SuspectList[ADMSYS_MAX_SUSPECTS_IN_TABLE] = {INVALID_PLAYER_ID, ...},
-	AdmSysCmdsStr[1958];
+	AdmSysCmdsStr[2019];
 
 forward OnPlayerBan(playerid, gaveid, bool:sban);
 forward OnPlayerKick(playerid, gaveid, bool:skick);
@@ -469,6 +471,7 @@ public OnPlayerText(playerid, text[])
 		if(!strcmp(cmd, "/sethealth", true)) return admsys_cmd_sethealth(playerid, params);
 		if(!strcmp(cmd, "/setarmour", true)) return admsys_cmd_setarmour(playerid, params);
 		if(!strcmp(cmd, "/setmoney", true)) return admsys_cmd_setmoney(playerid, params);
+		if(!strcmp(cmd, "/setscore", true)) return admsys_cmd_setscore(playerid, params);
 		if(!strcmp(cmd, "/setskin", true)) return admsys_cmd_setskin(playerid, params);
 		if(!strcmp(cmd, "/setint", true) || !strcmp(cmd, "/setinterior", true)) return admsys_cmd_setint(playerid, params);
 		if(!strcmp(cmd, "/setvw", true) || !strcmp(cmd, "/setvirtualworld", true)) return admsys_cmd_setvw(playerid, params);
@@ -618,17 +621,19 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 					case 18:
 						ShowPlayerDialog(playerid, ADMSYS_DIALOG_SET_ARMOUR, DIALOG_STYLE_INPUT, "Выдать броню", "Введите количество брони, которое вы хотите выдать:", "Ок", "Закрыть");
 					case 19:
-						ShowPlayerDialog(playerid, ADMSYS_DIALOG_SET_MONEY, DIALOG_STYLE_INPUT, "Выдать деньги", "Введите количество денег, которое вы хотите выдать:", "Ок", "Закрыть");
+						ShowPlayerDialog(playerid, ADMSYS_DIALOG_SET_MONEY, DIALOG_STYLE_INPUT, "Установить деньги", "Введите количество денег, которое вы хотите установить:", "Ок", "Закрыть");
 					case 20:
-						ShowPlayerDialog(playerid, ADMSYS_DIALOG_CHANGE_SKIN, DIALOG_STYLE_INPUT, "Установить скин", "Введите ID скина, который вы хотите установить:", "Ок", "Закрыть");
+						ShowPlayerDialog(playerid, ADMSYS_DIALOG_SET_SCORE, DIALOG_STYLE_INPUT, "Установить очки (уровень)", "Введите количество очков, которое вы хотите установить:", "Ок", "Закрыть");
 					case 21:
-						ShowPlayerDialog(playerid, ADMSYS_DIALOG_SET_INT, DIALOG_STYLE_INPUT, "Установить интерьер", "Введите ID интерьера, который вы хотите установить:", "Ок", "Закрыть");
+						ShowPlayerDialog(playerid, ADMSYS_DIALOG_CHANGE_SKIN, DIALOG_STYLE_INPUT, "Установить скин", "Введите ID скина, который вы хотите установить:", "Ок", "Закрыть");
 					case 22:
-						ShowPlayerDialog(playerid, ADMSYS_DIALOG_SET_VW, DIALOG_STYLE_INPUT, "Установить виртуальный мир", "Введите ID виртуального мира, который вы хотите установить:", "Ок", "Закрыть");
+						ShowPlayerDialog(playerid, ADMSYS_DIALOG_SET_INT, DIALOG_STYLE_INPUT, "Установить интерьер", "Введите ID интерьера, который вы хотите установить:", "Ок", "Закрыть");
 					case 23:
+						ShowPlayerDialog(playerid, ADMSYS_DIALOG_SET_VW, DIALOG_STYLE_INPUT, "Установить виртуальный мир", "Введите ID виртуального мира, который вы хотите установить:", "Ок", "Закрыть");
+					case 24:
 						ShowPlayerDialog(playerid, ADMSYS_DIALOG_GIVE_WEAPON, DIALOG_STYLE_INPUT, "Выдать оружие", "Введите ID оружия, которое вы хотите выдать:", "Ок", "Закрыть");
-					case 24: admsys_cmd_sban(playerid, strtmp);
-					case 25: admsys_cmd_skick(playerid, strtmp);
+					case 25: admsys_cmd_sban(playerid, strtmp);
+					case 26: admsys_cmd_skick(playerid, strtmp);
 				}
 			}
 			return 1;
@@ -781,13 +786,29 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 			if(response)
 			{
 				if(admsys_isnull(inputtext))
-					ShowPlayerDialog(playerid, ADMSYS_DIALOG_SET_MONEY, DIALOG_STYLE_INPUT, "Выдать деньги", "Введите количество денег, которое вы хотите выдать:", "Ок", "Закрыть");
+					ShowPlayerDialog(playerid, ADMSYS_DIALOG_SET_MONEY, DIALOG_STYLE_INPUT, "Установить деньги", "Введите количество денег, которое вы хотите установить:", "Ок", "Закрыть");
 				else
 				{
 					static strtmp[32];
 					format(strtmp, sizeof strtmp, "%d %s", AdmSysInfo[playerid][asTabPanel], inputtext);
 					AdmSysInfo[playerid][asTabPanel] = INVALID_PLAYER_ID;
 					admsys_cmd_setmoney(playerid, strtmp);
+				}
+			}
+			return 1;
+		}
+		case ADMSYS_DIALOG_SET_SCORE:
+		{
+			if(response)
+			{
+				if(admsys_isnull(inputtext))
+					ShowPlayerDialog(playerid, ADMSYS_DIALOG_SET_SCORE, DIALOG_STYLE_INPUT, "Установить очки (уровень)", "Введите количество очков, которое вы хотите установить:", "Ок", "Закрыть");
+				else
+				{
+					static strtmp[32];
+					format(strtmp, sizeof strtmp, "%d %s", AdmSysInfo[playerid][asTabPanel], inputtext);
+					AdmSysInfo[playerid][asTabPanel] = INVALID_PLAYER_ID;
+					admsys_cmd_setscore(playerid, strtmp);
 				}
 			}
 			return 1;
@@ -917,10 +938,11 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 									ResetPlayerMoney(AdmSysInfo[playerid][asLastActionID]);
 									GivePlayerMoney(AdmSysInfo[playerid][asLastActionID], AdmSysInfo[playerid][asLastIntData][0]);
 								}
-								case 4: SetPlayerSkin(AdmSysInfo[playerid][asLastActionID], AdmSysInfo[playerid][asLastIntData][0]);
-								case 5: SetPlayerInterior(AdmSysInfo[playerid][asLastActionID], AdmSysInfo[playerid][asLastIntData][0]);
-								case 6: SetPlayerVirtualWorld(AdmSysInfo[playerid][asLastActionID], AdmSysInfo[playerid][asLastIntData][0]);
-								case 7:
+								case 4: SetPlayerScore(AdmSysInfo[playerid][asLastActionID], AdmSysInfo[playerid][asLastIntData][0]);
+								case 5: SetPlayerSkin(AdmSysInfo[playerid][asLastActionID], AdmSysInfo[playerid][asLastIntData][0]);
+								case 6: SetPlayerInterior(AdmSysInfo[playerid][asLastActionID], AdmSysInfo[playerid][asLastIntData][0]);
+								case 7: SetPlayerVirtualWorld(AdmSysInfo[playerid][asLastActionID], AdmSysInfo[playerid][asLastIntData][0]);
+								case 8:
 									GivePlayerWeapon(AdmSysInfo[playerid][asLastActionID], AdmSysInfo[playerid][asLastIntData][0], -AdmSysInfo[playerid][asLastIntData][1]);
 							}
 							AdmSysInfo[playerid][asLastAction] = 0;
@@ -1183,7 +1205,7 @@ public OnPlayerClickPlayer(playerid, clickedplayerid, source)
 {
 	if(IsPlayerAdminEx(playerid))
 	{
-		static strtmp[518], strtmp2[44], strname[MAX_PLAYER_NAME + 1];
+		static strtmp[549], strtmp2[44], strname[MAX_PLAYER_NAME + 1];
 		strtmp[0] = EOS;
 		AdmSysInfo[playerid][asTabPanel] = clickedplayerid;
 		GetPlayerName(clickedplayerid, strname, sizeof strname);
@@ -1194,8 +1216,8 @@ public OnPlayerClickPlayer(playerid, clickedplayerid, source)
 		Заморозить\nРазморозить\nДать пинка\nТелепортироваться к игроку");
 		if(IsPlayerAdminEx(playerid, 3)) strcat(strtmp, "\nТелепортировать к себе\nЗаблокировать аккаунт\n\
 		Проверка на бесконечное здоровье\nТелепортировать на респавн\nСнять предупреждение");
-		if(IsPlayerAdminEx(playerid, 4)) strcat(strtmp, "\nВыдать здоровье\nВыдать броню\nВыдать деньги\n\
-		Установить скин\nУстановить интерьер\nУстановить виртуальный мир\nВыдать оружие");
+		if(IsPlayerAdminEx(playerid, 4)) strcat(strtmp, "\nВыдать здоровье\nВыдать броню\nУстановить деньги\n\
+		Установить очки (уровень)\nУстановить скин\nУстановить интерьер\nУстановить виртуальный мир\nВыдать оружие");
 		if(IsPlayerAdminEx(playerid, 5)) strcat(strtmp, "\nТихая блокировка\nТихий кик");
 		ShowPlayerDialog(playerid, ADMSYS_DIALOG_TAB_PANEL, DIALOG_STYLE_LIST, strtmp2, strtmp, "Ок", "Закрыть");
 	}
@@ -2429,6 +2451,41 @@ admsys_cmd_setmoney(playerid, const params[])
 	return 1;
 }
 
+CMD:setscore(playerid, const params[]) return admsys_cmd_setscore(playerid, params);
+admsys_cmd_setscore(playerid, const params[])
+{
+	if(IsPlayerAdminEx(playerid, 4))
+	{
+		if(admsys_isnull(params)) return SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, "Используйте: /setscore [id] [очки]");
+		static strtmp[64];
+		new pos, oldpos;
+		while(params[pos] > ' ') pos++;
+		strmid(strtmp, params, 0, pos);
+		if(!admsys_IsNumeric(strtmp)) return SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, "Используйте: /setscore [id] [очки]");
+		new giveid = strval(strtmp);
+		if(!IsPlayerConnected(giveid)) return SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, "Игрок не найден");
+		while(params[pos] == ' ') pos++;
+		oldpos = pos;
+		while(params[pos] > ' ') pos++;
+		strmid(strtmp, params, oldpos, pos);
+		if(params[oldpos] == '\0' || !admsys_IsNumeric(strtmp))
+			return SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, "Используйте: /setscore [id] [очки]");
+		static strname[MAX_PLAYER_NAME + 1];
+		new gscore = strval(strtmp);
+		AdmSysInfo[playerid][asLastAction] = 4;
+		AdmSysInfo[playerid][asLastIntData][0] = GetPlayerScore(giveid);
+		AdmSysInfo[playerid][asLastActionID] = giveid;
+		SetPlayerScore(giveid, gscore);
+		GetPlayerName(giveid, strname, sizeof strname);
+		format(strtmp, sizeof strtmp, "Вы установили %s[%d] количество очков (уровень) на %d", strname, giveid, gscore);
+		SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, strtmp);
+		GetPlayerName(playerid, strname, sizeof strname);
+		format(strtmp, sizeof strtmp, "Администратор %s установил вам %d очков (уровень)", strname, gscore);
+		SendClientMessage(giveid, ADMSYS_DEFAULT_COLOR, strtmp);
+	}
+	return 1;
+}
+
 CMD:setskin(playerid, const params[]) return admsys_cmd_setskin(playerid, params);
 admsys_cmd_setskin(playerid, const params[])
 {
@@ -2451,7 +2508,7 @@ admsys_cmd_setskin(playerid, const params[])
 		new skinid = strval(strtmp);
 		if(!(0 <= skinid <= 311)) return SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, "Используйте ID скина от 0 до 311");
 		static strname[MAX_PLAYER_NAME + 1];
-		AdmSysInfo[playerid][asLastAction] = 4;
+		AdmSysInfo[playerid][asLastAction] = 5;
 		AdmSysInfo[playerid][asLastIntData][0] = GetPlayerSkin(giveid);
 		AdmSysInfo[playerid][asLastActionID] = giveid;
 		SetPlayerSkin(giveid, skinid);
@@ -2487,7 +2544,7 @@ admsys_cmd_setint(playerid, const params[])
 			return SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, "Используйте: /setint [id] [интерьер]");
 		static strname[MAX_PLAYER_NAME + 1];
 		new gint = strval(strtmp);
-		AdmSysInfo[playerid][asLastAction] = 5;
+		AdmSysInfo[playerid][asLastAction] = 6;
 		AdmSysInfo[playerid][asLastIntData][0] = GetPlayerInterior(giveid);
 		AdmSysInfo[playerid][asLastActionID] = giveid;
 		SetPlayerInterior(giveid, gint);
@@ -2525,7 +2582,7 @@ admsys_cmd_setvw(playerid, const params[])
 			return SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, "Используйте: /setvw [id] [виртуальный мир]");
 		static strname[MAX_PLAYER_NAME + 1];
 		new gvw = strval(strtmp);
-		AdmSysInfo[playerid][asLastAction] = 6;
+		AdmSysInfo[playerid][asLastAction] = 7;
 		AdmSysInfo[playerid][asLastIntData][0] = GetPlayerVirtualWorld(giveid);
 		AdmSysInfo[playerid][asLastActionID] = giveid;
 		SetPlayerVirtualWorld(giveid, gvw);
@@ -2570,7 +2627,7 @@ admsys_cmd_giveweapon(playerid, const params[])
 			return SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, "Используйте: /giveweapon [id] [оружие] [патроны]");
 		static strname[MAX_PLAYER_NAME + 1];
 		new gammo = strval(strtmp);
-		AdmSysInfo[playerid][asLastAction] = 7;
+		AdmSysInfo[playerid][asLastAction] = 8;
 		AdmSysInfo[playerid][asLastIntData][0] = gweapon;
 		AdmSysInfo[playerid][asLastIntData][1] = gammo;
 		AdmSysInfo[playerid][asLastActionID] = giveid;

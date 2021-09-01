@@ -1,4 +1,4 @@
-//Admin System by Nexius v2.6
+//Admin System by Nexius v2.7
 
 #if defined _admsys_included
 	#endinput
@@ -7,7 +7,7 @@
 
 #include <a_samp>
 
-#define	ADMSYS_VERSION						"2.6"
+#define	ADMSYS_VERSION						"2.7"
 
 #if !defined ADMSYS_SEND_ACTION_MSGS_TO_ALL
 	#define ADMSYS_SEND_ACTION_MSGS_TO_ALL		false
@@ -85,6 +85,7 @@ static const AdmSysCmds[][] =
 	"/sethealth [id] [health] - Set health to player\n",
 	"/setarmour [id] [armour] - Set armour to player\n",
 	"/setmoney [id] [money] - Set money to player\n",
+	"/setscore [id] [score] - Set score to player\n",
 	"/setskin [id] [skin id] - Set skin to player\n",
 	"/setint [id] [interior] - Set interior to player\n",
 	"/setvw [id] [vw] - Set virtual world to player\n",
@@ -115,6 +116,7 @@ enum
 	ADMSYS_DIALOG_SET_HEALTH,
 	ADMSYS_DIALOG_SET_ARMOUR,
 	ADMSYS_DIALOG_SET_MONEY,
+	ADMSYS_DIALOG_SET_SCORE,
 	ADMSYS_DIALOG_CHANGE_SKIN,
 	ADMSYS_DIALOG_SET_INT,
 	ADMSYS_DIALOG_SET_VW,
@@ -174,7 +176,7 @@ enum asInfo
 static
 	AdmSysInfo[MAX_PLAYERS][asInfo],
 	SuspectList[ADMSYS_MAX_SUSPECTS_IN_TABLE] = {INVALID_PLAYER_ID, ...},
-	AdmSysCmdsStr[1728];
+	AdmSysCmdsStr[1773];
 
 forward OnPlayerBan(playerid, gaveid, bool:sban);
 forward OnPlayerKick(playerid, gaveid, bool:skick);
@@ -469,6 +471,7 @@ public OnPlayerText(playerid, text[])
 		if(!strcmp(cmd, "/sethealth", true)) return admsys_cmd_sethealth(playerid, params);
 		if(!strcmp(cmd, "/setarmour", true)) return admsys_cmd_setarmour(playerid, params);
 		if(!strcmp(cmd, "/setmoney", true)) return admsys_cmd_setmoney(playerid, params);
+		if(!strcmp(cmd, "/setscore", true)) return admsys_cmd_setscore(playerid, params);
 		if(!strcmp(cmd, "/setskin", true)) return admsys_cmd_setskin(playerid, params);
 		if(!strcmp(cmd, "/setint", true) || !strcmp(cmd, "/setinterior", true)) return admsys_cmd_setint(playerid, params);
 		if(!strcmp(cmd, "/setvw", true) || !strcmp(cmd, "/setvirtualworld", true)) return admsys_cmd_setvw(playerid, params);
@@ -620,15 +623,17 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 					case 19:
 						ShowPlayerDialog(playerid, ADMSYS_DIALOG_SET_MONEY, DIALOG_STYLE_INPUT, "Set money", "Enter the amount of money you want to set:", "Ok", "Close");
 					case 20:
-						ShowPlayerDialog(playerid, ADMSYS_DIALOG_CHANGE_SKIN, DIALOG_STYLE_INPUT, "Set skin", "Enter the ID of the skin you want to set:", "Ok", "Close");
+						ShowPlayerDialog(playerid, ADMSYS_DIALOG_SET_SCORE, DIALOG_STYLE_INPUT, "Set score", "Enter the amount of score you want to set:", "Ok", "Close");
 					case 21:
-						ShowPlayerDialog(playerid, ADMSYS_DIALOG_SET_INT, DIALOG_STYLE_INPUT, "Set interior", "Enter the ID of the interior you want to set:", "Ok", "Close");
+						ShowPlayerDialog(playerid, ADMSYS_DIALOG_CHANGE_SKIN, DIALOG_STYLE_INPUT, "Set skin", "Enter the ID of the skin you want to set:", "Ok", "Close");
 					case 22:
-						ShowPlayerDialog(playerid, ADMSYS_DIALOG_SET_VW, DIALOG_STYLE_INPUT, "Set virtual world", "Enter the ID of the virtual world you want to set:", "Ok", "Close");
+						ShowPlayerDialog(playerid, ADMSYS_DIALOG_SET_INT, DIALOG_STYLE_INPUT, "Set interior", "Enter the ID of the interior you want to set:", "Ok", "Close");
 					case 23:
+						ShowPlayerDialog(playerid, ADMSYS_DIALOG_SET_VW, DIALOG_STYLE_INPUT, "Set virtual world", "Enter the ID of the virtual world you want to set:", "Ok", "Close");
+					case 24:
 						ShowPlayerDialog(playerid, ADMSYS_DIALOG_GIVE_WEAPON, DIALOG_STYLE_INPUT, "Give weapon", "Enter the ID of the weapon you want to give:", "Ok", "Close");
-					case 24: admsys_cmd_sban(playerid, strtmp);
-					case 25: admsys_cmd_skick(playerid, strtmp);
+					case 25: admsys_cmd_sban(playerid, strtmp);
+					case 26: admsys_cmd_skick(playerid, strtmp);
 				}
 			}
 			return 1;
@@ -792,6 +797,22 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 			}
 			return 1;
 		}
+		case ADMSYS_DIALOG_SET_SCORE:
+		{
+			if(response)
+			{
+				if(admsys_isnull(inputtext))
+					ShowPlayerDialog(playerid, ADMSYS_DIALOG_SET_SCORE, DIALOG_STYLE_INPUT, "Set score", "Enter the amount of score you want to set:", "Ok", "Close");
+				else
+				{
+					static strtmp[32];
+					format(strtmp, sizeof strtmp, "%d %s", AdmSysInfo[playerid][asTabPanel], inputtext);
+					AdmSysInfo[playerid][asTabPanel] = INVALID_PLAYER_ID;
+					admsys_cmd_setscore(playerid, strtmp);
+				}
+			}
+			return 1;
+		}
 		case ADMSYS_DIALOG_CHANGE_SKIN:
 		{
 			if(response)
@@ -917,14 +938,15 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 									ResetPlayerMoney(AdmSysInfo[playerid][asLastActionID]);
 									GivePlayerMoney(AdmSysInfo[playerid][asLastActionID], AdmSysInfo[playerid][asLastIntData][0]);
 								}
-								case 4: SetPlayerSkin(AdmSysInfo[playerid][asLastActionID], AdmSysInfo[playerid][asLastIntData][0]);
-								case 5: SetPlayerInterior(AdmSysInfo[playerid][asLastActionID], AdmSysInfo[playerid][asLastIntData][0]);
-								case 6: SetPlayerVirtualWorld(AdmSysInfo[playerid][asLastActionID], AdmSysInfo[playerid][asLastIntData][0]);
-								case 7:
+								case 4: SetPlayerScore(AdmSysInfo[playerid][asLastActionID], AdmSysInfo[playerid][asLastIntData][0]);
+								case 5: SetPlayerSkin(AdmSysInfo[playerid][asLastActionID], AdmSysInfo[playerid][asLastIntData][0]);
+								case 6: SetPlayerInterior(AdmSysInfo[playerid][asLastActionID], AdmSysInfo[playerid][asLastIntData][0]);
+								case 7: SetPlayerVirtualWorld(AdmSysInfo[playerid][asLastActionID], AdmSysInfo[playerid][asLastIntData][0]);
+								case 8:
 									GivePlayerWeapon(AdmSysInfo[playerid][asLastActionID], AdmSysInfo[playerid][asLastIntData][0], -AdmSysInfo[playerid][asLastIntData][1]);
 							}
 							AdmSysInfo[playerid][asLastAction] = 0;
-							SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, "The command canceled");
+							SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, "Command canceled");
 						}
 					}
 				}
@@ -1183,7 +1205,7 @@ public OnPlayerClickPlayer(playerid, clickedplayerid, source)
 {
 	if(IsPlayerAdminEx(playerid))
 	{
-		static strtmp[351], strtmp2[43], strname[MAX_PLAYER_NAME + 1];
+		static strtmp[362], strtmp2[43], strname[MAX_PLAYER_NAME + 1];
 		strtmp[0] = EOS;
 		AdmSysInfo[playerid][asTabPanel] = clickedplayerid;
 		GetPlayerName(clickedplayerid, strname, sizeof strname);
@@ -1194,7 +1216,7 @@ public OnPlayerClickPlayer(playerid, clickedplayerid, source)
 		if(IsPlayerAdminEx(playerid, 3)) strcat(strtmp, "\nTeleport to yourself\nBan\n\
 		Check for infinite health\nTeleport to respawn\nRemove warn");
 		if(IsPlayerAdminEx(playerid, 4)) strcat(strtmp, "\nSet health\nSet armour\nSet money\n\
-		Set skin\nSet interior\nSet virtual world\nGive weapon");
+		Set score\nSet skin\nSet interior\nSet virtual world\nGive weapon");
 		if(IsPlayerAdminEx(playerid, 5)) strcat(strtmp, "\nSilent ban\nSilent kick");
 		ShowPlayerDialog(playerid, ADMSYS_DIALOG_TAB_PANEL, DIALOG_STYLE_LIST, strtmp2, strtmp, "Ok", "Close");
 	}
@@ -2428,6 +2450,41 @@ admsys_cmd_setmoney(playerid, const params[])
 	return 1;
 }
 
+CMD:setscore(playerid, const params[]) return admsys_cmd_setscore(playerid, params);
+admsys_cmd_setscore(playerid, const params[])
+{
+	if(IsPlayerAdminEx(playerid, 4))
+	{
+		if(admsys_isnull(params)) return SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, "Use: /setscore [id] [score]");
+		static strtmp[64];
+		new pos, oldpos;
+		while(params[pos] > ' ') pos++;
+		strmid(strtmp, params, 0, pos);
+		if(!admsys_IsNumeric(strtmp)) return SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, "Use: /setscore [id] [score]");
+		new giveid = strval(strtmp);
+		if(!IsPlayerConnected(giveid)) return SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, "Player is not found");
+		while(params[pos] == ' ') pos++;
+		oldpos = pos;
+		while(params[pos] > ' ') pos++;
+		strmid(strtmp, params, oldpos, pos);
+		if(params[oldpos] == '\0' || !admsys_IsNumeric(strtmp))
+			return SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, "Use: /setscore [id] [score]");
+		static strname[MAX_PLAYER_NAME + 1];
+		new gscore = strval(strtmp);
+		AdmSysInfo[playerid][asLastAction] = 4;
+		AdmSysInfo[playerid][asLastIntData][0] = GetPlayerScore(giveid);
+		AdmSysInfo[playerid][asLastActionID] = giveid;
+		SetPlayerScore(giveid, gscore);
+		GetPlayerName(giveid, strname, sizeof strname);
+		format(strtmp, sizeof strtmp, "You have set the score to %d to %s[%d]", gscore, strname, giveid);
+		SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, strtmp);
+		GetPlayerName(playerid, strname, sizeof strname);
+		format(strtmp, sizeof strtmp, "Administrator %s has set you score to %d", strname, gscore);
+		SendClientMessage(giveid, ADMSYS_DEFAULT_COLOR, strtmp);
+	}
+	return 1;
+}
+
 CMD:setskin(playerid, const params[]) return admsys_cmd_setskin(playerid, params);
 admsys_cmd_setskin(playerid, const params[])
 {
@@ -2450,7 +2507,7 @@ admsys_cmd_setskin(playerid, const params[])
 		new skinid = strval(strtmp);
 		if(!(0 <= skinid <= 311)) return SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, "Use ID of skin from 0 to 311");
 		static strname[MAX_PLAYER_NAME + 1];
-		AdmSysInfo[playerid][asLastAction] = 4;
+		AdmSysInfo[playerid][asLastAction] = 5;
 		AdmSysInfo[playerid][asLastIntData][0] = GetPlayerSkin(giveid);
 		AdmSysInfo[playerid][asLastActionID] = giveid;
 		SetPlayerSkin(giveid, skinid);
@@ -2486,7 +2543,7 @@ admsys_cmd_setint(playerid, const params[])
 			return SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, "Use: /setint [id] [interior]");
 		static strname[MAX_PLAYER_NAME + 1];
 		new gint = strval(strtmp);
-		AdmSysInfo[playerid][asLastAction] = 5;
+		AdmSysInfo[playerid][asLastAction] = 6;
 		AdmSysInfo[playerid][asLastIntData][0] = GetPlayerInterior(giveid);
 		AdmSysInfo[playerid][asLastActionID] = giveid;
 		SetPlayerInterior(giveid, gint);
@@ -2524,7 +2581,7 @@ admsys_cmd_setvw(playerid, const params[])
 			return SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, "Use: /setvw [id] [vw]");
 		static strname[MAX_PLAYER_NAME + 1];
 		new gvw = strval(strtmp);
-		AdmSysInfo[playerid][asLastAction] = 6;
+		AdmSysInfo[playerid][asLastAction] = 7;
 		AdmSysInfo[playerid][asLastIntData][0] = GetPlayerVirtualWorld(giveid);
 		AdmSysInfo[playerid][asLastActionID] = giveid;
 		SetPlayerVirtualWorld(giveid, gvw);
@@ -2569,7 +2626,7 @@ admsys_cmd_giveweapon(playerid, const params[])
 			return SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, "Use: /giveweapon [id] [weapon] [ammo]");
 		static strname[MAX_PLAYER_NAME + 1];
 		new gammo = strval(strtmp);
-		AdmSysInfo[playerid][asLastAction] = 7;
+		AdmSysInfo[playerid][asLastAction] = 8;
 		AdmSysInfo[playerid][asLastIntData][0] = gweapon;
 		AdmSysInfo[playerid][asLastIntData][1] = gammo;
 		AdmSysInfo[playerid][asLastActionID] = giveid;
