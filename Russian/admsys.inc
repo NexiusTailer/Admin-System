@@ -414,7 +414,7 @@ public OnPlayerText(playerid, text[])
 	forward admsys_OnPlayerText(playerid, text[]);
 #endif
 
-#if !defined YCMD && !defined _I_ZCMD_INCLUDED
+#if !defined YCMD && !defined _I_ZCMD_INCLUDED && !defined PAWNCMD_INC
 	public OnPlayerCommandText(playerid, cmdtext[])
 	{
 		new cmd[32], pos;
