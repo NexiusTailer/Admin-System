@@ -29,7 +29,7 @@ The commands will work on any cmd processor! (except rCmd).
 `/eject` *[id]* - Remove player from vehicle
 
 #### Level 2
-`/spec` *[id]* - Begin spectate player  
+`/spec` *[id]* - Start spectate player  
 `/spawnveh` *[vehicle id]* - Teleport vehicle to respawn  
 `/(un)mute` *[id]* *[time]* *[reason]* - Mute/unmute player  
 `/asay` *[text]* - Message: `Administrator: [text]`  
@@ -43,6 +43,7 @@ The commands will work on any cmd processor! (except rCmd).
 `/suspectlist` - List of suspected players  
 `/gethere` *[id]* - Teleport player to yourself  
 `/gotoveh` *[vehicle id]* - Teleport to vehicle  
+`/gotopos` *[x]* *[y]* *[z]* - Teleport to position  
 `/ban` *[id]* *[reason]*- Ban player's account  
 `/gmtest` *[id]* - Check for infinite health  
 `/spawn` *[id]* - Teleport player to respawn  
@@ -54,6 +55,7 @@ The commands will work on any cmd processor! (except rCmd).
 `/sethealth` *[id]* *[health]* - Set health to player  
 `/setarmour` *[id]* *[armour]* - Set armour to player  
 `/setmoney` *[id]* *[money]* - Set money to player  
+`/givemoney` *[id]* *[money]* - Give money to player  
 `/setscore` *[id]* *[score]* - Set score to player  
 `/setskin` *[id]* *[skin id]* - Set skin to player  
 `/setint` *[id]* *[interior]* - Set interior to player  

@@ -1,4 +1,4 @@
-//Admin System by Nexius v2.7
+//Admin System by Nexius v2.8
 
 #if defined _admsys_included
 	#endinput
@@ -7,7 +7,11 @@
 
 #include <a_samp>
 
-#define	ADMSYS_VERSION						"2.7"
+#define	ADMSYS_VERSION						"2.8"
+
+#if !defined ADMSYS_SHOW_KILL_LIST_FOR_ADM
+	#define ADMSYS_SHOW_KILL_LIST_FOR_ADM		true
+#endif
 
 #if !defined ADMSYS_SEND_ACTION_MSGS_TO_ALL
 	#define ADMSYS_SEND_ACTION_MSGS_TO_ALL		false
@@ -17,12 +21,34 @@
 	#define ADMSYS_SEND_CONNECT_MSGS_TO_ADM		false
 #endif
 
-#if !defined ADMSYS_SHOW_KILL_LIST_FOR_ADM
-	#define ADMSYS_SHOW_KILL_LIST_FOR_ADM		true
+#if ADMSYS_SEND_CONNECT_MSGS_TO_ADM
+	#if !defined ADMSYS_CONNECT_MSG_COLOR
+		#define ADMSYS_CONNECT_MSG_COLOR	0xA9C4E4FF
+	#endif
 #endif
 
 #if !defined ADMSYS_DEFAULT_COLOR
-	#define ADMSYS_DEFAULT_COLOR			-1
+	#define ADMSYS_DEFAULT_COLOR			0xFFFFFFFF
+#endif
+
+#if !defined ADMSYS_ADM_CHAT_COLOR
+	#define ADMSYS_ADM_CHAT_COLOR			0x88AA62FF
+#endif
+
+#if !defined ADMSYS_ADM_ACTION_COLOR
+	#define ADMSYS_ADM_ACTION_COLOR			0x2587CEFF
+#endif
+
+#if !defined ADMSYS_REPORT_COLOR
+	#define ADMSYS_REPORT_COLOR				0xB9C9BFFF
+#endif
+
+#if !defined ADMSYS_CMD_HELPER_COLOR
+	#define ADMSYS_CMD_HELPER_COLOR			0xD2D2D2FF
+#endif
+
+#if !defined ADMSYS_ERROR_COLOR
+	#define ADMSYS_ERROR_COLOR				0xBB9999FF
 #endif
 
 #if !defined ADMSYS_MAX_WARNS
@@ -48,7 +74,7 @@
 	#define CMD:%0(%1) forward cmd_%0(%1); public cmd_%0(%1)
 #endif
 
-static const AdmSysCmds[][] =
+static const AdmSys1LvlCmds[][] =
 {
 	"Level 1:\n",
 	"/achat [text] - Admin chat\n",
@@ -57,10 +83,13 @@ static const AdmSysCmds[][] =
 	"/answer [id] [text] - Respond on player's report\n",
 	"/apanel - Admin panel with all available commands\n",
 	"/admins - List of administrators online\n",
-	"/eject [id] - Remove player from vehicle\n",
-	"\n",
+	"/eject [id] - Remove player from vehicle"
+},
+
+AdmSys2LvlCmds[][] =
+{
 	"Level 2:\n",
-	"/spec [id] - Begin spectate player\n",
+	"/spec [id] - Start spectate player\n",
 	"/spawnveh [vehicle id] - Teleport vehicle to respawn\n",
 	"/(un)mute [id] [time] [reason] - Mute/unmute player\n",
 	"/asay [text] - Message: 'Administrator: [text]'\n",
@@ -68,31 +97,42 @@ static const AdmSysCmds[][] =
 	"/kick [id] [reason] - Kick player from the server\n",
 	"/(un)freeze [id] - Freeze/unfreeze player\n",
 	"/slap [id] [reason] - Slap player\n",
-	"/goto [id] - Teleport to player\n",
-	"\n",
+	"/goto [id] - Teleport to player"
+},
+
+AdmSys3LvlCmds[][] =
+{
 	"Level 3:\n",
 	"/suspectlist - List of suspected players\n",
 	"/gethere [id] - Teleport player to yourself\n",
 	"/gotoveh [vehicle id] - Teleport to vehicle\n",
+	"/gotopos [x] [y] [z] - Teleport to position\n",
 	"/ban [id] [reason] - Ban player's account\n",
 	"/gmtest [id] - Check for infinite health\n",
 	"/spawn [id] - Teleport player to respawn\n",
 	"/unwarn [id] - Remove warn from player\n",
 	"/banip [IP] - Block IP address\n",
-	"/cc - Clear chat\n",
-	"\n",
+	"/cc - Clear chat"
+},
+
+AdmSys4LvlCmds[][] =
+{
 	"Level 4:\n",
 	"/sethealth [id] [health] - Set health to player\n",
 	"/setarmour [id] [armour] - Set armour to player\n",
 	"/setmoney [id] [money] - Set money to player\n",
+	"/givemoney [id] [money] - Give money to player\n",
 	"/setscore [id] [score] - Set score to player\n",
 	"/setskin [id] [skin id] - Set skin to player\n",
 	"/setint [id] [interior] - Set interior to player\n",
 	"/setvw [id] [vw] - Set virtual world to player\n",
 	"/giveweapon [id] [weapon] [ammo] - Give weapon to player\n",
 	"/repairveh [vehicle id] - Repair vehicle\n",
-	"/unbanip [IP] - Unblock IP address\n",
-	"\n",
+	"/unbanip [IP] - Unblock IP address"
+},
+
+AdmSys5LvlCmds[][] =
+{
 	"Level 5:\n",
 	"/getall - Teleport all to yourself\n",
 	"/setweather [number] - Set weather\n",
@@ -116,19 +156,25 @@ enum
 	ADMSYS_DIALOG_SET_HEALTH,
 	ADMSYS_DIALOG_SET_ARMOUR,
 	ADMSYS_DIALOG_SET_MONEY,
+	ADMSYS_DIALOG_GIVE_MONEY,
 	ADMSYS_DIALOG_SET_SCORE,
 	ADMSYS_DIALOG_CHANGE_SKIN,
 	ADMSYS_DIALOG_SET_INT,
 	ADMSYS_DIALOG_SET_VW,
 	ADMSYS_DIALOG_GIVE_WEAPON,
 	ADMSYS_DIALOG_GIVE_WEAPON_AMMO,
-	ADMSYS_DIALOG_AHELP,
+	ADMSYS_DIALOG_AHELP_LVL_1,
+	ADMSYS_DIALOG_AHELP_LVL_2,
+	ADMSYS_DIALOG_AHELP_LVL_3,
+	ADMSYS_DIALOG_AHELP_LVL_4,
+	ADMSYS_DIALOG_AHELP_LVL_5,
 	ADMSYS_DIALOG_STATS,
 	ADMSYS_DIALOG_APANEL,
 	ADMSYS_DIALOG_ACHAT,
 	ADMSYS_DIALOG_SPAWN_VEH,
 	ADMSYS_DIALOG_ASAY,
 	ADMSYS_DIALOG_GOTO_VEH,
+	ADMSYS_DIALOG_GOTO_POS,
 	ADMSYS_DIALOG_BAN_IP,
 	ADMSYS_DIALOG_REPAIR_VEH,
 	ADMSYS_DIALOG_UNBAN_IP,
@@ -176,7 +222,12 @@ enum asInfo
 static
 	AdmSysInfo[MAX_PLAYERS][asInfo],
 	SuspectList[ADMSYS_MAX_SUSPECTS_IN_TABLE] = {INVALID_PLAYER_ID, ...},
-	AdmSysCmdsStr[1773];
+
+	AdmSys1LvlCmdsStr[293],
+	AdmSys2LvlCmdsStr[398],
+	AdmSys3LvlCmdsStr[393],
+	AdmSys4LvlCmdsStr[516],
+	AdmSys5LvlCmdsStr[262];
 
 forward OnPlayerBan(playerid, gaveid, bool:sban);
 forward OnPlayerKick(playerid, gaveid, bool:skick);
@@ -188,7 +239,11 @@ public OnGameModeInit()
 	print(" Admin System by Nexius loaded!");
 	printf(" Version: %s", ADMSYS_VERSION);
 	print(" ");
-	for(new i; i < sizeof AdmSysCmds; i++) strcat(AdmSysCmdsStr, AdmSysCmds[i]);
+	for(new i; i < sizeof AdmSys1LvlCmds; i++) strcat(AdmSys1LvlCmdsStr, AdmSys1LvlCmds[i]);
+	for(new i; i < sizeof AdmSys2LvlCmds; i++) strcat(AdmSys2LvlCmdsStr, AdmSys2LvlCmds[i]);
+	for(new i; i < sizeof AdmSys3LvlCmds; i++) strcat(AdmSys3LvlCmdsStr, AdmSys3LvlCmds[i]);
+	for(new i; i < sizeof AdmSys4LvlCmds; i++) strcat(AdmSys4LvlCmdsStr, AdmSys4LvlCmds[i]);
+	for(new i; i < sizeof AdmSys5LvlCmds; i++) strcat(AdmSys5LvlCmdsStr, AdmSys5LvlCmds[i]);
 	SetTimer("UpdateMuteTime", 1000, 1);
 	#if defined admsys_OnGameModeInit
 		return admsys_OnGameModeInit();
@@ -247,7 +302,7 @@ public OnPlayerConnect(playerid)
 		GetPlayerName(playerid, sname, sizeof sname);
 		GetPlayerIp(playerid, sip, sizeof sip);
 		format(strtmp, sizeof strtmp, "[IP: %s] %s[%d] has joined the server", sip, sname, playerid);
-		SendMessageToAdmins(1, ADMSYS_DEFAULT_COLOR, strtmp);
+		SendMessageToAdmins(1, ADMSYS_CONNECT_MSG_COLOR, strtmp);
 	#endif
 	#if defined admsys_OnPlayerConnect
 		return admsys_OnPlayerConnect(playerid);
@@ -280,7 +335,7 @@ public OnPlayerDisconnect(playerid, reason)
 	#endif
 		if(AdmSysInfo[i][asSpecID] == playerid)
 		{
-			SendClientMessage(i, ADMSYS_DEFAULT_COLOR, "Player has disconnected");
+			SendClientMessage(i, ADMSYS_ERROR_COLOR, "Player has disconnected");
 			StopSpectating(i);
 		}
 	}
@@ -360,7 +415,7 @@ public OnPlayerDeath(playerid, killerid, reason)
 	#endif
 		if(AdmSysInfo[i][asSpecID] == playerid)
 		{
-			SendClientMessage(i, ADMSYS_DEFAULT_COLOR, "Player has died");
+			SendClientMessage(i, ADMSYS_ERROR_COLOR, "Player has died");
 			SetPlayerInterior(i, interior);
 			SetPlayerVirtualWorld(i, vw);
 		}
@@ -394,7 +449,7 @@ public OnPlayerText(playerid, text[])
 	{
 		format(strtmp, sizeof strtmp, "You are muted. Remaining mute time: %d minutes %d seconds",
 		floatround(AdmSysInfo[playerid][asMuteTime] / 60, floatround_tozero), AdmSysInfo[playerid][asMuteTime] % 60);
-		SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, strtmp);
+		SendClientMessage(playerid, ADMSYS_ERROR_COLOR, strtmp);
 		return 0;
 	}
 	#if defined admsys_OnPlayerText
@@ -461,6 +516,7 @@ public OnPlayerText(playerid, text[])
 		if(!strcmp(cmd, "/suspectlist", true)) return admsys_cmd_suspectlist(playerid, params);
 		if(!strcmp(cmd, "/gethere", true) || !strcmp(cmd, "/get", true)) return admsys_cmd_gethere(playerid, params);
 		if(!strcmp(cmd, "/gotoveh", true) || !strcmp(cmd, "/gotovehicle", true)) return admsys_cmd_gotoveh(playerid, params);
+		if(!strcmp(cmd, "/gotopos", true) || !strcmp(cmd, "/gotoposition", true)) return admsys_cmd_gotopos(playerid, params);
 		if(!strcmp(cmd, "/ban", true)) return admsys_cmd_ban(playerid, params);
 		if(!strcmp(cmd, "/gmtest", true)) return admsys_cmd_gmtest(playerid, params);
 		if(!strcmp(cmd, "/spawn", true)) return admsys_cmd_spawn(playerid, params);
@@ -471,6 +527,7 @@ public OnPlayerText(playerid, text[])
 		if(!strcmp(cmd, "/sethealth", true)) return admsys_cmd_sethealth(playerid, params);
 		if(!strcmp(cmd, "/setarmour", true)) return admsys_cmd_setarmour(playerid, params);
 		if(!strcmp(cmd, "/setmoney", true)) return admsys_cmd_setmoney(playerid, params);
+		if(!strcmp(cmd, "/givemoney", true)) return admsys_cmd_givemoney(playerid, params);
 		if(!strcmp(cmd, "/setscore", true)) return admsys_cmd_setscore(playerid, params);
 		if(!strcmp(cmd, "/setskin", true)) return admsys_cmd_setskin(playerid, params);
 		if(!strcmp(cmd, "/setint", true) || !strcmp(cmd, "/setinterior", true)) return admsys_cmd_setint(playerid, params);
@@ -518,7 +575,7 @@ public OnPlayerStateChange(playerid, newstate, oldstate)
 		#endif
 			if(AdmSysInfo[i][asSpecID] == playerid)
 			{
-				SendClientMessage(i, ADMSYS_DEFAULT_COLOR, "Player is in spectator mode");
+				SendClientMessage(i, ADMSYS_ERROR_COLOR, "Player is in spectator mode");
 				StopSpectating(i);
 			}
 		}
@@ -623,17 +680,19 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 					case 19:
 						ShowPlayerDialog(playerid, ADMSYS_DIALOG_SET_MONEY, DIALOG_STYLE_INPUT, "Set money", "Enter the amount of money you want to set:", "Ok", "Close");
 					case 20:
-						ShowPlayerDialog(playerid, ADMSYS_DIALOG_SET_SCORE, DIALOG_STYLE_INPUT, "Set score", "Enter the amount of score you want to set:", "Ok", "Close");
+						ShowPlayerDialog(playerid, ADMSYS_DIALOG_GIVE_MONEY, DIALOG_STYLE_INPUT, "Give money", "Enter the amount of money you want to give:", "Ok", "Close");
 					case 21:
-						ShowPlayerDialog(playerid, ADMSYS_DIALOG_CHANGE_SKIN, DIALOG_STYLE_INPUT, "Set skin", "Enter the ID of the skin you want to set:", "Ok", "Close");
+						ShowPlayerDialog(playerid, ADMSYS_DIALOG_SET_SCORE, DIALOG_STYLE_INPUT, "Set score", "Enter the amount of score you want to set:", "Ok", "Close");
 					case 22:
-						ShowPlayerDialog(playerid, ADMSYS_DIALOG_SET_INT, DIALOG_STYLE_INPUT, "Set interior", "Enter the ID of the interior you want to set:", "Ok", "Close");
+						ShowPlayerDialog(playerid, ADMSYS_DIALOG_CHANGE_SKIN, DIALOG_STYLE_INPUT, "Set skin", "Enter the ID of the skin you want to set:", "Ok", "Close");
 					case 23:
-						ShowPlayerDialog(playerid, ADMSYS_DIALOG_SET_VW, DIALOG_STYLE_INPUT, "Set virtual world", "Enter the ID of the virtual world you want to set:", "Ok", "Close");
+						ShowPlayerDialog(playerid, ADMSYS_DIALOG_SET_INT, DIALOG_STYLE_INPUT, "Set interior", "Enter the ID of the interior you want to set:", "Ok", "Close");
 					case 24:
+						ShowPlayerDialog(playerid, ADMSYS_DIALOG_SET_VW, DIALOG_STYLE_INPUT, "Set virtual world", "Enter the ID of the virtual world you want to set:", "Ok", "Close");
+					case 25:
 						ShowPlayerDialog(playerid, ADMSYS_DIALOG_GIVE_WEAPON, DIALOG_STYLE_INPUT, "Give weapon", "Enter the ID of the weapon you want to give:", "Ok", "Close");
-					case 25: admsys_cmd_sban(playerid, strtmp);
-					case 26: admsys_cmd_skick(playerid, strtmp);
+					case 26: admsys_cmd_sban(playerid, strtmp);
+					case 27: admsys_cmd_skick(playerid, strtmp);
 				}
 			}
 			return 1;
@@ -797,6 +856,22 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 			}
 			return 1;
 		}
+		case ADMSYS_DIALOG_GIVE_MONEY:
+		{
+			if(response)
+			{
+				if(admsys_isnull(inputtext))
+					ShowPlayerDialog(playerid, ADMSYS_DIALOG_GIVE_MONEY, DIALOG_STYLE_INPUT, "Give money", "Enter the amount of money you want to give:", "Ok", "Close");
+				else
+				{
+					static strtmp[32];
+					format(strtmp, sizeof strtmp, "%d %s", AdmSysInfo[playerid][asTabPanel], inputtext);
+					AdmSysInfo[playerid][asTabPanel] = INVALID_PLAYER_ID;
+					admsys_cmd_givemoney(playerid, strtmp);
+				}
+			}
+			return 1;
+		}
 		case ADMSYS_DIALOG_SET_SCORE:
 		{
 			if(response)
@@ -892,6 +967,42 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 			else ShowPlayerDialog(playerid, ADMSYS_DIALOG_GIVE_WEAPON, DIALOG_STYLE_INPUT, "Give weapon", "Enter the ID of the weapon you want to give:", "Ok", "Close");
 			return 1;
 		}
+		case ADMSYS_DIALOG_AHELP_LVL_1:
+		{
+			if(response)
+				ShowPlayerDialog(playerid, ADMSYS_DIALOG_AHELP_LVL_2, DIALOG_STYLE_MSGBOX, "Help with admin commands", AdmSys2LvlCmdsStr, "Next", "Back");
+			return 1;
+		}
+		case ADMSYS_DIALOG_AHELP_LVL_2:
+		{
+			if(response)
+				ShowPlayerDialog(playerid, ADMSYS_DIALOG_AHELP_LVL_3, DIALOG_STYLE_MSGBOX, "Help with admin commands", AdmSys3LvlCmdsStr, "Next", "Back");
+			else
+				ShowPlayerDialog(playerid, ADMSYS_DIALOG_AHELP_LVL_1, DIALOG_STYLE_MSGBOX, "Help with admin commands", AdmSys1LvlCmdsStr, "Next", "Close");
+			return 1;
+		}
+		case ADMSYS_DIALOG_AHELP_LVL_3:
+		{
+			if(response)
+				ShowPlayerDialog(playerid, ADMSYS_DIALOG_AHELP_LVL_4, DIALOG_STYLE_MSGBOX, "Help with admin commands", AdmSys4LvlCmdsStr, "Next", "Back");
+			else
+				ShowPlayerDialog(playerid, ADMSYS_DIALOG_AHELP_LVL_2, DIALOG_STYLE_MSGBOX, "Help with admin commands", AdmSys2LvlCmdsStr, "Next", "Back");
+			return 1;
+		}
+		case ADMSYS_DIALOG_AHELP_LVL_4:
+		{
+			if(response)
+				ShowPlayerDialog(playerid, ADMSYS_DIALOG_AHELP_LVL_5, DIALOG_STYLE_MSGBOX, "Help with admin commands", AdmSys5LvlCmdsStr, "Ok", "Back");
+			else
+				ShowPlayerDialog(playerid, ADMSYS_DIALOG_AHELP_LVL_3, DIALOG_STYLE_MSGBOX, "Help with admin commands", AdmSys3LvlCmdsStr, "Next", "Back");
+			return 1;
+		}
+		case ADMSYS_DIALOG_AHELP_LVL_5:
+		{
+			if(!response)
+				ShowPlayerDialog(playerid, ADMSYS_DIALOG_AHELP_LVL_4, DIALOG_STYLE_MSGBOX, "Help with admin commands", AdmSys4LvlCmdsStr, "Next", "Back");
+			return 1;
+		}
 		case ADMSYS_DIALOG_APANEL:
 		{
 			if(response)
@@ -910,24 +1021,26 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 					case 6:
 						ShowPlayerDialog(playerid, ADMSYS_DIALOG_GOTO_VEH, DIALOG_STYLE_INPUT, "Teleport to vehicle", "Enter the ID of vehicle you want to teleport to:", "Ok", "Close");
 					case 7:
+						ShowPlayerDialog(playerid, ADMSYS_DIALOG_GOTO_POS, DIALOG_STYLE_INPUT, "Teleport to position", "Enter the coordinates separated by a space, to which you want to teleport:", "Ok", "Close");
+					case 8:
 						ShowPlayerDialog(playerid, ADMSYS_DIALOG_BAN_IP, DIALOG_STYLE_INPUT, "Block IP address", "Enter the IP address you want to block:", "Ok", "Close");
-					case 8: admsys_cmd_cc(playerid, "\1");
-					case 9:
-						ShowPlayerDialog(playerid, ADMSYS_DIALOG_REPAIR_VEH, DIALOG_STYLE_INPUT, "Repair vehicle", "Enter the ID of vehicle you want to repair:", "Ok", "Close");
+					case 9: admsys_cmd_cc(playerid, "\1");
 					case 10:
+						ShowPlayerDialog(playerid, ADMSYS_DIALOG_REPAIR_VEH, DIALOG_STYLE_INPUT, "Repair vehicle", "Enter the ID of vehicle you want to repair:", "Ok", "Close");
+					case 11:
 						ShowPlayerDialog(playerid, ADMSYS_DIALOG_UNBAN_IP, DIALOG_STYLE_INPUT, "Unblock IP address", "Enter the IP address you want to unblock:", "Ok", "Close");
-					case 11: admsys_cmd_getall(playerid, "\1");
-					case 12:
-						ShowPlayerDialog(playerid, ADMSYS_DIALOG_SET_WEATHER, DIALOG_STYLE_INPUT, "Set weather", "Enter the ID of the weather you want to set:", "Ok", "Close");
+					case 12: admsys_cmd_getall(playerid, "\1");
 					case 13:
-						ShowPlayerDialog(playerid, ADMSYS_DIALOG_SET_TIME, DIALOG_STYLE_INPUT, "Set the time of day", "Enter the hour you want to set:", "Ok", "Close");
+						ShowPlayerDialog(playerid, ADMSYS_DIALOG_SET_WEATHER, DIALOG_STYLE_INPUT, "Set weather", "Enter the ID of the weather you want to set:", "Ok", "Close");
 					case 14:
-						ShowPlayerDialog(playerid, ADMSYS_DIALOG_DESTROY_VEH, DIALOG_STYLE_INPUT, "Destroy vehicle", "Enter the ID of vehicle you want to destroy:", "Ok", "Close");
+						ShowPlayerDialog(playerid, ADMSYS_DIALOG_SET_TIME, DIALOG_STYLE_INPUT, "Set the time of day", "Enter the hour you want to set:", "Ok", "Close");
 					case 15:
-						ShowPlayerDialog(playerid, ADMSYS_DIALOG_CREATE_VEH, DIALOG_STYLE_INPUT, "Create vehicle", "Enter vehicle model you want to create:", "Ok", "Close");
+						ShowPlayerDialog(playerid, ADMSYS_DIALOG_DESTROY_VEH, DIALOG_STYLE_INPUT, "Destroy vehicle", "Enter the ID of vehicle you want to destroy:", "Ok", "Close");
 					case 16:
+						ShowPlayerDialog(playerid, ADMSYS_DIALOG_CREATE_VEH, DIALOG_STYLE_INPUT, "Create vehicle", "Enter vehicle model you want to create:", "Ok", "Close");
+					case 17:
 					{
-						if(AdmSysInfo[playerid][asLastAction])
+						if(IsPlayerAdminEx(playerid) && AdmSysInfo[playerid][asLastAction])
 						{
 							switch(AdmSysInfo[playerid][asLastAction])
 							{
@@ -938,11 +1051,12 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 									ResetPlayerMoney(AdmSysInfo[playerid][asLastActionID]);
 									GivePlayerMoney(AdmSysInfo[playerid][asLastActionID], AdmSysInfo[playerid][asLastIntData][0]);
 								}
-								case 4: SetPlayerScore(AdmSysInfo[playerid][asLastActionID], AdmSysInfo[playerid][asLastIntData][0]);
-								case 5: SetPlayerSkin(AdmSysInfo[playerid][asLastActionID], AdmSysInfo[playerid][asLastIntData][0]);
-								case 6: SetPlayerInterior(AdmSysInfo[playerid][asLastActionID], AdmSysInfo[playerid][asLastIntData][0]);
-								case 7: SetPlayerVirtualWorld(AdmSysInfo[playerid][asLastActionID], AdmSysInfo[playerid][asLastIntData][0]);
-								case 8:
+								case 4: GivePlayerMoney(AdmSysInfo[playerid][asLastActionID], -AdmSysInfo[playerid][asLastIntData][0]);
+								case 5: SetPlayerScore(AdmSysInfo[playerid][asLastActionID], AdmSysInfo[playerid][asLastIntData][0]);
+								case 6: SetPlayerSkin(AdmSysInfo[playerid][asLastActionID], AdmSysInfo[playerid][asLastIntData][0]);
+								case 7: SetPlayerInterior(AdmSysInfo[playerid][asLastActionID], AdmSysInfo[playerid][asLastIntData][0]);
+								case 8: SetPlayerVirtualWorld(AdmSysInfo[playerid][asLastActionID], AdmSysInfo[playerid][asLastIntData][0]);
+								case 9:
 									GivePlayerWeapon(AdmSysInfo[playerid][asLastActionID], AdmSysInfo[playerid][asLastIntData][0], -AdmSysInfo[playerid][asLastIntData][1]);
 							}
 							AdmSysInfo[playerid][asLastAction] = 0;
@@ -989,6 +1103,16 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 				if(admsys_isnull(inputtext))
 					ShowPlayerDialog(playerid, ADMSYS_DIALOG_GOTO_VEH, DIALOG_STYLE_INPUT, "Teleport to vehicle", "Enter the ID of vehicle you want to teleport to:", "Ok", "Close");
 				else admsys_cmd_gotoveh(playerid, inputtext);
+			}
+			return 1;
+		}
+		case ADMSYS_DIALOG_GOTO_POS:
+		{
+			if(response)
+			{
+				if(admsys_isnull(inputtext))
+					ShowPlayerDialog(playerid, ADMSYS_DIALOG_GOTO_POS, DIALOG_STYLE_INPUT, "Teleport to position", "Enter the coordinates separated by a space, to which you want to teleport:", "Ok", "Close");
+				else admsys_cmd_gotopos(playerid, inputtext);
 			}
 			return 1;
 		}
@@ -1096,11 +1220,11 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 		}
 		case ADMSYS_DIALOG_SUSPECT_LIST:
 		{
-			if(response && 0 <= listitem < sizeof SuspectList)
+			if(response && IsPlayerAdminEx(playerid, 3) && 0 <= listitem < sizeof SuspectList)
 			{
 				if(!StartSpectating(playerid, SuspectList[listitem]))
 				{
-					SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, "Player has disconnected");
+					SendClientMessage(playerid, ADMSYS_ERROR_COLOR, "Player has disconnected");
 					admsys_cmd_suspectlist(playerid, "\1");
 				}
 				else if(AdmSysInfo[playerid][asSpecID] == SuspectList[listitem]) RemovePlayerFromSuspectList(SuspectList[listitem]);
@@ -1205,18 +1329,18 @@ public OnPlayerClickPlayer(playerid, clickedplayerid, source)
 {
 	if(IsPlayerAdminEx(playerid))
 	{
-		static strtmp[362], strtmp2[43], strname[MAX_PLAYER_NAME + 1];
+		static strtmp[373], strtmp2[43], strname[MAX_PLAYER_NAME + 1];
 		strtmp[0] = EOS;
 		AdmSysInfo[playerid][asTabPanel] = clickedplayerid;
 		GetPlayerName(clickedplayerid, strname, sizeof strname);
 		format(strtmp2, sizeof strtmp2, "Admin panel for %s", strname);
 		strcat(strtmp, "Show statistics\nRespond on report\nRemove from vehicle");
-		if(IsPlayerAdminEx(playerid, 2)) strcat(strtmp, "\nBegin spectate\n\
+		if(IsPlayerAdminEx(playerid, 2)) strcat(strtmp, "\nStart spectate\n\
 		Mute\nUnmute\nGive warn\nKick\nFreeze\nUnfreeze\nSlap\nTeleport to player");
 		if(IsPlayerAdminEx(playerid, 3)) strcat(strtmp, "\nTeleport to yourself\nBan\n\
 		Check for infinite health\nTeleport to respawn\nRemove warn");
 		if(IsPlayerAdminEx(playerid, 4)) strcat(strtmp, "\nSet health\nSet armour\nSet money\n\
-		Set score\nSet skin\nSet interior\nSet virtual world\nGive weapon");
+		Give money\nSet score\nSet skin\nSet interior\nSet virtual world\nGive weapon");
 		if(IsPlayerAdminEx(playerid, 5)) strcat(strtmp, "\nSilent ban\nSilent kick");
 		ShowPlayerDialog(playerid, ADMSYS_DIALOG_TAB_PANEL, DIALOG_STYLE_LIST, strtmp2, strtmp, "Ok", "Close");
 	}
@@ -1284,7 +1408,7 @@ admsys_fpublic GmTest(playerid)
 	{
 		if(AdmSysInfo[AdmSysInfo[playerid][asGmTestID]][asGmTest])
 		{
-			static strtmp[179];
+			static strtmp[182];
 			new vehid, Float:nowhp, Float:nowar, Float:hpdiff, Float:ardiff;
 			vehid = GetPlayerVehicleID(AdmSysInfo[playerid][asGmTestID]);
 			if(vehid) GetVehicleHealth(vehid, nowhp);
@@ -1303,7 +1427,8 @@ admsys_fpublic GmTest(playerid)
 			}
 			else
 			{
-				format(strtmp, sizeof strtmp, "Before:\t%.1f health, %.1f armour\nAfter:\t%.1f health, %.1f armour\nHealth decreased by:\t%.1f\nArmour decreased by:\t%.1f\n\nGodMode isn't detected.\nHealth and armor restored.",
+				format(strtmp, sizeof strtmp, "Before:\t%.1f health, %.1f armour\nAfter:\t%.1f health, %.1f armour\n\
+				Health decreased by:\t%.1f\nArmour decreased by:\t%.1f\n\nGodMode isn't detected.\nHealth and armor restored.",
 				AdmSysInfo[AdmSysInfo[playerid][asGmTestID]][asGmTestHP], AdmSysInfo[AdmSysInfo[playerid][asGmTestID]][asGmTestAR], nowhp, nowar, hpdiff, ardiff);
 				ShowPlayerDialog(playerid, ADMSYS_DIALOG_GMTEST, DIALOG_STYLE_MSGBOX, "Check for GodMode", strtmp, "Close", "");
 				if(vehid) SetVehicleHealth(vehid, AdmSysInfo[AdmSysInfo[playerid][asGmTestID]][asGmTestHP]);
@@ -1328,14 +1453,14 @@ admsys_cmd_report(playerid, const params[])
 	{
 		format(strtmp, sizeof strtmp, "You are muted. Remaining mute time: %d minutes %d seconds",
 		floatround(AdmSysInfo[playerid][asMuteTime] / 60, floatround_tozero), AdmSysInfo[playerid][asMuteTime] % 60);
-		return SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, strtmp);
+		return SendClientMessage(playerid, ADMSYS_ERROR_COLOR, strtmp);
 	}
-	if(admsys_isnull(params)) return SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, "Use: /report [text]");
+	if(admsys_isnull(params)) return SendClientMessage(playerid, ADMSYS_CMD_HELPER_COLOR, "Use: /report [text]");
 	static strname[MAX_PLAYER_NAME + 1];
 	GetPlayerName(playerid, strname, sizeof strname);
 	format(strtmp, sizeof strtmp, "[Report] %s[%d]: %s", strname, playerid, params);
-	SendMessageToAdmins(1, ADMSYS_DEFAULT_COLOR, strtmp);
-	SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, strtmp);
+	if(!IsPlayerAdminEx(playerid)) SendClientMessage(playerid, ADMSYS_REPORT_COLOR, strtmp);
+	SendMessageToAdmins(1, ADMSYS_REPORT_COLOR, strtmp);
 	return 1;
 }
 
@@ -1346,14 +1471,14 @@ admsys_cmd_achat(playerid, const params[])
 {
 	if(IsPlayerAdminEx(playerid))
 	{
-		if(admsys_isnull(params)) return SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, "Use: /achat [text]");
+		if(admsys_isnull(params)) return SendClientMessage(playerid, ADMSYS_CMD_HELPER_COLOR, "Use: /achat [text]");
 		static strtmp[145], strname[MAX_PLAYER_NAME + 1];
 		strtmp = "[Admin chat] ";
 		GetPlayerName(playerid, strname, sizeof strname);
 		strcat(strtmp, strname);
 		strcat(strtmp, ": ");
 		strcat(strtmp, params);
-		SendMessageToAdmins(1, ADMSYS_DEFAULT_COLOR, strtmp);
+		SendMessageToAdmins(1, ADMSYS_ADM_CHAT_COLOR, strtmp);
 	}
 	return 1;
 }
@@ -1365,7 +1490,7 @@ admsys_cmd_ahelp(playerid, const params[])
 {
 	#pragma unused params
 	if(IsPlayerAdminEx(playerid))
-		ShowPlayerDialog(playerid, ADMSYS_DIALOG_AHELP, DIALOG_STYLE_MSGBOX, "Help with admin commands", AdmSysCmdsStr, "Ok", "");
+		ShowPlayerDialog(playerid, ADMSYS_DIALOG_AHELP_LVL_1, DIALOG_STYLE_MSGBOX, "Help with admin commands", AdmSys1LvlCmdsStr, "Next", "Close");
 	return 1;
 }
 
@@ -1377,9 +1502,9 @@ admsys_cmd_showstats(playerid, params[])
 		if(admsys_isnull(params)) params[0] = playerid;
 		else
 		{
-			if(!admsys_IsNumeric(params)) return SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, "Use: /showstats [id]");
+			if(!admsys_IsNumeric(params)) return SendClientMessage(playerid, ADMSYS_CMD_HELPER_COLOR, "Use: /showstats [id]");
 			params[0] = strval(params);
-			if(!IsPlayerConnected(params[0])) return SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, "Player is not found");
+			if(!IsPlayerConnected(params[0])) return SendClientMessage(playerid, ADMSYS_ERROR_COLOR, "Player is not found");
 		}
 		new Float:ghealth, Float:garmour;
 		static strtmp[38], strtmp2[192], strname[MAX_PLAYER_NAME + 1], gip[16];
@@ -1401,24 +1526,27 @@ admsys_cmd_answer(playerid, const params[])
 {
 	if(IsPlayerAdminEx(playerid))
 	{
-		if(admsys_isnull(params)) return SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, "Use: /answer [id] [text]");
+		if(admsys_isnull(params)) return SendClientMessage(playerid, ADMSYS_CMD_HELPER_COLOR, "Use: /answer [id] [text]");
 		new pos;
 		static strtmp[145];
 		while(params[pos] > ' ') pos++;
 		strmid(strtmp, params, 0, pos);
-		if(!admsys_IsNumeric(strtmp)) return SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, "Use: /answer [id] [text]");
+		if(!admsys_IsNumeric(strtmp)) return SendClientMessage(playerid, ADMSYS_CMD_HELPER_COLOR, "Use: /answer [id] [text]");
 		new giveid = strval(strtmp);
-		if(!IsPlayerConnected(giveid)) return SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, "Player is not found");
+		if(!IsPlayerConnected(giveid)) return SendClientMessage(playerid, ADMSYS_ERROR_COLOR, "Player is not found");
 		while(params[pos] == ' ') pos++;
-		if(params[pos] == '\0') return SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, "Use: /answer [id] [text]");
+		if(params[pos] == '\0') return SendClientMessage(playerid, ADMSYS_CMD_HELPER_COLOR, "Use: /answer [id] [text]");
 		static strname[MAX_PLAYER_NAME + 1], strname2[MAX_PLAYER_NAME + 1];
 		GetPlayerName(playerid, strname, sizeof strname);
 		GetPlayerName(giveid, strname2, sizeof strname2);
 		format(strtmp, sizeof strtmp, "[Response to report %s] %s: %s", strname2, strname, params[pos]);
-		SendMessageToAdmins(1, ADMSYS_DEFAULT_COLOR, strtmp);
-		strtmp = "[Response to report]: ";
-		strcat(strtmp, params[pos]);
-		SendClientMessage(giveid, ADMSYS_DEFAULT_COLOR, strtmp);
+		SendMessageToAdmins(1, ADMSYS_REPORT_COLOR, strtmp);
+		if(!IsPlayerAdminEx(giveid))
+		{
+			strtmp = "[Response to report]: ";
+			strcat(strtmp, params[pos]);
+			SendClientMessage(giveid, ADMSYS_REPORT_COLOR, strtmp);
+		}
 	}
 	return 1;
 }
@@ -1431,13 +1559,13 @@ admsys_cmd_apanel(playerid, const params[])
 	#pragma unused params
 	if(IsPlayerAdminEx(playerid))
 	{
-		static strtmp[361];
+		static strtmp[382];
 		strtmp[0] = EOS;
 		strcat(strtmp, "Admin chat\nHelp with admin commands\nList of administrators online");
 		if(IsPlayerAdminEx(playerid, 2)) strcat(strtmp, "\nTeleport vehicle to respawn\n\
 		Message: 'Administrator: [text]'");
 		if(IsPlayerAdminEx(playerid, 3)) strcat(strtmp, "\nList of suspected players\n\
-		Teleport to vehicle\nBlock IP address\nClear chat");
+		Teleport to vehicle\nTeleport to position\nBlock IP address\nClear chat");
 		if(IsPlayerAdminEx(playerid, 4)) strcat(strtmp, "\nRepair vehicle\nUnblock IP address");
 		if(IsPlayerAdminEx(playerid, 5)) strcat(strtmp, "\nTeleport all to yourself\nSet weather\n\
 		Set the time of day\nDestroy vehicle\nCreate vehicle");
@@ -1507,14 +1635,14 @@ admsys_cmd_eject(playerid, const params[])
 							strcat(strtmp, strname2);
 						}
 					}
-					return SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, strtmp);
+					return SendClientMessage(playerid, ADMSYS_CMD_HELPER_COLOR, strtmp);
 				}
 				giveid = strval(strtmp);
 				if(!IsPlayerConnected(giveid))
 				{
 					if(i == 1) strtmp = "Player is not found";
 					else format(strtmp, sizeof strtmp, "Player %d is not found", i);
-					SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, strtmp);
+					SendClientMessage(playerid, ADMSYS_ERROR_COLOR, strtmp);
 				}
 				else if(!IsPlayerInAnyVehicle(giveid))
 				{
@@ -1524,16 +1652,16 @@ admsys_cmd_eject(playerid, const params[])
 						else strtmp = "Player is not in vehicle";
 					}
 					else format(strtmp, sizeof strtmp, "Player %d is not in vehicle", i);
-					SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, strtmp);
+					SendClientMessage(playerid, ADMSYS_ERROR_COLOR, strtmp);
 				}
 				else
 				{
 					RemovePlayerFromVehicle(giveid);
 					GetPlayerName(giveid, strname2, sizeof strname2);
-					format(strtmp, sizeof strtmp, "You removedВ %s[%d] from vehicle", strname2, giveid);
+					format(strtmp, sizeof strtmp, "You removed %s[%d] from vehicle", strname2, giveid);
 					SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, strtmp);
 					format(strtmp, sizeof strtmp, "Administrator %s removed you from vehicle", strname);
-					SendClientMessage(giveid, ADMSYS_DEFAULT_COLOR, strtmp);
+					SendClientMessage(giveid, ADMSYS_ADM_ACTION_COLOR, strtmp);
 				}
 			}
 		}
@@ -1546,12 +1674,12 @@ admsys_cmd_spec(playerid, params[])
 {
 	if(IsPlayerAdminEx(playerid, 2))
 	{
-		if(admsys_isnull(params)) return SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, "Use: /spec [id]");
+		if(admsys_isnull(params)) return SendClientMessage(playerid, ADMSYS_CMD_HELPER_COLOR, "Use: /spec [id]");
 		if(!strcmp(params, "off", true)) return admsys_cmd_specoff(playerid, "\1");
 		if(!strcmp(params, "update", true)) return admsys_cmd_specupdate(playerid, "\1");
-		if(!admsys_IsNumeric(params)) return SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, "Use: /spec [id]");
+		if(!admsys_IsNumeric(params)) return SendClientMessage(playerid, ADMSYS_CMD_HELPER_COLOR, "Use: /spec [id]");
 		params[0] = strval(params);
-		if(!StartSpectating(playerid, params[0])) return SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, "Player is not found");
+		if(!StartSpectating(playerid, params[0])) return SendClientMessage(playerid, ADMSYS_ERROR_COLOR, "Player is not found");
 	}
 	return 1;
 }
@@ -1580,16 +1708,16 @@ admsys_cmd_spawnveh(playerid, params[])
 	{
 		if(admsys_isnull(params))
 		{
-			if(!IsPlayerInAnyVehicle(playerid)) return SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, "You are not in vehicle");
+			if(!IsPlayerInAnyVehicle(playerid)) return SendClientMessage(playerid, ADMSYS_ERROR_COLOR, "You are not in vehicle");
 			params[0] = GetPlayerVehicleID(playerid);
 		}
 		else
 		{
 			if(!admsys_IsNumeric(params))
-				return SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, "Use: /spawnveh [vehicle id]");
+				return SendClientMessage(playerid, ADMSYS_CMD_HELPER_COLOR, "Use: /spawnveh [vehicle id]");
 			params[0] = strval(params);
 			if(GetVehicleModel(params[0]) <= 0)
-				return SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, "Vehicle is not found");
+				return SendClientMessage(playerid, ADMSYS_ERROR_COLOR, "Vehicle is not found");
 		}
 		static strtmp[24];
 		SetVehicleToRespawn(params[0]);
@@ -1605,40 +1733,40 @@ admsys_cmd_mute(playerid, const params[])
 	if(IsPlayerAdminEx(playerid, 2))
 	{
 		if(admsys_isnull(params))
-			return SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, "Use: /mute [id] [time] [reason]");
+			return SendClientMessage(playerid, ADMSYS_CMD_HELPER_COLOR, "Use: /mute [id] [time] [reason]");
 		static strtmp[145];
 		new pos, oldpos;
 		while(params[pos] > ' ') pos++;
 		strmid(strtmp, params, 0, pos);
 		if(!admsys_IsNumeric(strtmp))
-			return SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, "Use: /mute [id] [time] [reason]");
+			return SendClientMessage(playerid, ADMSYS_CMD_HELPER_COLOR, "Use: /mute [id] [time] [reason]");
 		new giveid = strval(strtmp);
-		if(!IsPlayerConnected(giveid)) return SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, "Player is not found");
-		if(AdmSysInfo[giveid][asMuteTime] > 0) return SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, "Player is already muted");
+		if(!IsPlayerConnected(giveid)) return SendClientMessage(playerid, ADMSYS_ERROR_COLOR, "Player is not found");
+		if(AdmSysInfo[giveid][asMuteTime] > 0) return SendClientMessage(playerid, ADMSYS_ERROR_COLOR, "Player is already muted");
 		if(GetPlayerAdminLevel(playerid) <= GetPlayerAdminLevel(giveid) && playerid != giveid)
-			return SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, "You can't apply this action to the administrator");
+			return SendClientMessage(playerid, ADMSYS_ERROR_COLOR, "You can't apply this action to the administrator");
 		while(params[pos] == ' ') pos++;
 		oldpos = pos;
 		while(params[pos] > ' ') pos++;
 		strmid(strtmp, params, oldpos, pos);
 		if(params[oldpos] == '\0' || !admsys_IsNumeric(strtmp))
-			return SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, "Use: /mute [id] [time] [reason]");
+			return SendClientMessage(playerid, ADMSYS_CMD_HELPER_COLOR, "Use: /mute [id] [time] [reason]");
 		new gtime = strval(strtmp);
-		if(!(1 <= gtime <= 60)) return SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, "Use time for 1 to 60 minutes");
+		if(!(1 <= gtime <= 60)) return SendClientMessage(playerid, ADMSYS_ERROR_COLOR, "The time must be from 1 to 60 minutes");
 		while(params[pos] == ' ') pos++;
-		if(params[pos] == '\0') return SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, "Use: /mute [id] [time] [reason]");
+		if(params[pos] == '\0') return SendClientMessage(playerid, ADMSYS_CMD_HELPER_COLOR, "Use: /mute [id] [time] [reason]");
 		static strname[MAX_PLAYER_NAME + 1], strname2[MAX_PLAYER_NAME + 1];
 		AdmSysInfo[giveid][asMuteTime] = gtime * 60;
 		GetPlayerName(playerid, strname, sizeof strname);
 		GetPlayerName(giveid, strname2, sizeof strname2);
 		format(strtmp, sizeof strtmp, "Administrator %s muted %s[%d] on %d minutes. Reason: %s", strname, strname2, giveid, gtime, params[pos]);
 		#if ADMSYS_SEND_ACTION_MSGS_TO_ALL
-			SendClientMessageToAll(ADMSYS_DEFAULT_COLOR, strtmp);
+			SendClientMessageToAll(ADMSYS_ADM_ACTION_COLOR, strtmp);
 		#else
-			SendMessageToAdmins(2, ADMSYS_DEFAULT_COLOR, strtmp);
+			SendMessageToAdmins(2, ADMSYS_ADM_ACTION_COLOR, strtmp);
 		#endif
 		format(strtmp, sizeof strtmp, "Administrator %s muted you on %d minutes. Reason: %s", strname, gtime, params[pos]);
-		SendClientMessage(giveid, ADMSYS_DEFAULT_COLOR, strtmp);
+		SendClientMessage(giveid, ADMSYS_ADM_ACTION_COLOR, strtmp);
 	}
 	return 1;
 }
@@ -1675,20 +1803,20 @@ admsys_cmd_unmute(playerid, const params[])
 							strcat(strtmp, strname2);
 						}
 					}
-					return SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, strtmp);
+					return SendClientMessage(playerid, ADMSYS_CMD_HELPER_COLOR, strtmp);
 				}
 				giveid = strval(strtmp);
 				if(!IsPlayerConnected(giveid))
 				{
 					if(i == 1) strtmp = "Player is not found";
 					else format(strtmp, sizeof strtmp, "Player %d is not found", i);
-					SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, strtmp);
+					SendClientMessage(playerid, ADMSYS_ERROR_COLOR, strtmp);
 				}
 				else if(AdmSysInfo[giveid][asMuteTime] < 1)
 				{
 					if(i == 1) strtmp = "Player is not muted";
 					else format(strtmp, sizeof strtmp, "Player %d is not muted", i);
-					SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, strtmp);
+					SendClientMessage(playerid, ADMSYS_ERROR_COLOR, strtmp);
 				}
 				else
 				{
@@ -1696,12 +1824,12 @@ admsys_cmd_unmute(playerid, const params[])
 					GetPlayerName(giveid, strname2, sizeof strname2);
 					format(strtmp, sizeof strtmp, "Administrator %s unmuted %s[%d]", strname, strname2, giveid);
 					#if ADMSYS_SEND_ACTION_MSGS_TO_ALL
-						SendClientMessageToAll(ADMSYS_DEFAULT_COLOR, strtmp);
+						SendClientMessageToAll(ADMSYS_ADM_ACTION_COLOR, strtmp);
 					#else
-						SendMessageToAdmins(2, ADMSYS_DEFAULT_COLOR, strtmp);
+						SendMessageToAdmins(2, ADMSYS_ADM_ACTION_COLOR, strtmp);
 					#endif
 					format(strtmp, sizeof strtmp, "Administrator %s unmuted you", strname);
-					SendClientMessage(giveid, ADMSYS_DEFAULT_COLOR, strtmp);
+					SendClientMessage(giveid, ADMSYS_ADM_ACTION_COLOR, strtmp);
 				}
 			}
 		}
@@ -1716,14 +1844,14 @@ admsys_cmd_asay(playerid, const params[])
 {
 	if(IsPlayerAdminEx(playerid, 2))
 	{
-		if(admsys_isnull(params)) return SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, "Use: /asay [text]");
+		if(admsys_isnull(params)) return SendClientMessage(playerid, ADMSYS_CMD_HELPER_COLOR, "Use: /asay [text]");
 		static strtmp[145], strname[MAX_PLAYER_NAME + 1];
 		strtmp = "Administrator ";
 		GetPlayerName(playerid, strname, sizeof strname);
 		strcat(strtmp, strname);
 		strcat(strtmp, ": ");
 		strcat(strtmp, params);
-		SendClientMessageToAll(ADMSYS_DEFAULT_COLOR, strtmp);
+		SendClientMessageToAll(ADMSYS_ADM_ACTION_COLOR, strtmp);
 	}
 	return 1;
 }
@@ -1733,18 +1861,18 @@ admsys_cmd_warn(playerid, const params[])
 {
 	if(IsPlayerAdminEx(playerid, 2))
 	{
-		if(admsys_isnull(params)) return SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, "Use: /warn [id] [reason]");
+		if(admsys_isnull(params)) return SendClientMessage(playerid, ADMSYS_CMD_HELPER_COLOR, "Use: /warn [id] [reason]");
 		static strtmp[145];
 		new pos;
 		while(params[pos] > ' ') pos++;
 		strmid(strtmp, params, 0, pos);
-		if(!admsys_IsNumeric(strtmp)) return SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, "Use: /warn [id] [reason]");
+		if(!admsys_IsNumeric(strtmp)) return SendClientMessage(playerid, ADMSYS_CMD_HELPER_COLOR, "Use: /warn [id] [reason]");
 		new giveid = strval(strtmp);
-		if(!IsPlayerConnected(giveid)) return SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, "Player is not found");
+		if(!IsPlayerConnected(giveid)) return SendClientMessage(playerid, ADMSYS_ERROR_COLOR, "Player is not found");
 		if(GetPlayerAdminLevel(playerid) <= GetPlayerAdminLevel(giveid) && playerid != giveid)
-			return SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, "You can't apply this action to the administrator");
+			return SendClientMessage(playerid, ADMSYS_ERROR_COLOR, "You can't apply this action to the administrator");
 		while(params[pos] == ' ') pos++;
-		if(params[pos] == '\0') return SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, "Use: /warn [id] [reason]");
+		if(params[pos] == '\0') return SendClientMessage(playerid, ADMSYS_CMD_HELPER_COLOR, "Use: /warn [id] [reason]");
 		static strname[MAX_PLAYER_NAME + 1], strname2[MAX_PLAYER_NAME + 1];
 		AdmSysInfo[giveid][asWarns]++;
 		CallRemoteFunction("OnPlayerWarn", "iii", giveid, playerid, AdmSysInfo[giveid][asWarns]);
@@ -1752,12 +1880,12 @@ admsys_cmd_warn(playerid, const params[])
 		GetPlayerName(giveid, strname2, sizeof strname2);
 		format(strtmp, sizeof strtmp, "Administrator %s has given %s[%d] a warn. Reason: %s", strname, strname2, giveid, params[pos]);
 		#if ADMSYS_SEND_ACTION_MSGS_TO_ALL
-			SendClientMessageToAll(ADMSYS_DEFAULT_COLOR, strtmp);
+			SendClientMessageToAll(ADMSYS_ADM_ACTION_COLOR, strtmp);
 		#else
-			SendMessageToAdmins(2, ADMSYS_DEFAULT_COLOR, strtmp);
+			SendMessageToAdmins(2, ADMSYS_ADM_ACTION_COLOR, strtmp);
 		#endif
 		format(strtmp, sizeof strtmp, "Administrator %s has given you a warn. Reason: %s", strname, params[pos]);
-		SendClientMessage(giveid, ADMSYS_DEFAULT_COLOR, strtmp);
+		SendClientMessage(giveid, ADMSYS_ADM_ACTION_COLOR, strtmp);
 		if(AdmSysInfo[giveid][asWarns] > ADMSYS_MAX_WARNS) return admsys_cmd_ban(playerid, params);
 	}
 	return 1;
@@ -1768,30 +1896,30 @@ admsys_cmd_kick(playerid, const params[])
 {
 	if(IsPlayerAdminEx(playerid, 2))
 	{
-		if(admsys_isnull(params)) return SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, "Use: /kick [id] [reason]");
+		if(admsys_isnull(params)) return SendClientMessage(playerid, ADMSYS_CMD_HELPER_COLOR, "Use: /kick [id] [reason]");
 		static strtmp[145];
 		new pos;
 		while(params[pos] > ' ') pos++;
 		strmid(strtmp, params, 0, pos);
-		if(!admsys_IsNumeric(strtmp)) return SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, "Use: /kick [id] [reason]");
+		if(!admsys_IsNumeric(strtmp)) return SendClientMessage(playerid, ADMSYS_CMD_HELPER_COLOR, "Use: /kick [id] [reason]");
 		new giveid = strval(strtmp);
-		if(!IsPlayerConnected(giveid)) return SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, "Player is not found");
+		if(!IsPlayerConnected(giveid)) return SendClientMessage(playerid, ADMSYS_ERROR_COLOR, "Player is not found");
 		if(GetPlayerAdminLevel(playerid) <= GetPlayerAdminLevel(giveid) && playerid != giveid)
-			return SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, "You can't apply this action to the administrator");
+			return SendClientMessage(playerid, ADMSYS_ERROR_COLOR, "You can't apply this action to the administrator");
 		while(params[pos] == ' ') pos++;
-		if(params[pos] == '\0') return SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, "Use: /kick [id] [reason]");
+		if(params[pos] == '\0') return SendClientMessage(playerid, ADMSYS_CMD_HELPER_COLOR, "Use: /kick [id] [reason]");
 		static strname[MAX_PLAYER_NAME + 1], strname2[MAX_PLAYER_NAME + 1];
 		CallRemoteFunction("OnPlayerKick", "iii", giveid, playerid, false);
 		GetPlayerName(playerid, strname, sizeof strname);
 		GetPlayerName(giveid, strname2, sizeof strname2);
-		format(strtmp, sizeof strtmp, "AdministratorВ %s has kicked %s[%d]. Reason: %s", strname, strname2, giveid, params[pos]);
+		format(strtmp, sizeof strtmp, "Administrator %s has kicked %s[%d]. Reason: %s", strname, strname2, giveid, params[pos]);
 		#if ADMSYS_SEND_ACTION_MSGS_TO_ALL
-			SendClientMessageToAll(ADMSYS_DEFAULT_COLOR, strtmp);
+			SendClientMessageToAll(ADMSYS_ADM_ACTION_COLOR, strtmp);
 		#else
-			SendMessageToAdmins(2, ADMSYS_DEFAULT_COLOR, strtmp);
+			SendMessageToAdmins(2, ADMSYS_ADM_ACTION_COLOR, strtmp);
 		#endif
-		format(strtmp, sizeof strtmp, "AdministratorВ %s has kicked you. Reason: %s", strname, params[pos]);
-		SendClientMessage(giveid, ADMSYS_DEFAULT_COLOR, strtmp);
+		format(strtmp, sizeof strtmp, "Administrator %s has kicked you. Reason: %s", strname, params[pos]);
+		SendClientMessage(giveid, ADMSYS_ADM_ACTION_COLOR, strtmp);
 		SetTimerEx("KickWithDelay", 500, 0, "i", giveid);
 	}
 	return 1;
@@ -1802,7 +1930,7 @@ admsys_cmd_freeze(playerid, const params[])
 {
 	if(IsPlayerAdminEx(playerid, 2))
 	{
-		new strtmp[95];
+		new strtmp[90];
 		if(admsys_isnull(params))
 		{
 			format(strtmp, sizeof strtmp, "%d", playerid);
@@ -1829,27 +1957,27 @@ admsys_cmd_freeze(playerid, const params[])
 							strcat(strtmp, strname2);
 						}
 					}
-					return SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, strtmp);
+					return SendClientMessage(playerid, ADMSYS_CMD_HELPER_COLOR, strtmp);
 				}
 				giveid = strval(strtmp);
 				if(!IsPlayerConnected(giveid))
 				{
 					if(i == 1) strtmp = "Player is not found";
 					else format(strtmp, sizeof strtmp, "Player %d is not found", i);
-					SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, strtmp);
+					SendClientMessage(playerid, ADMSYS_ERROR_COLOR, strtmp);
 				}
 				else
 				{
 					TogglePlayerControllable(giveid, 0);
 					GetPlayerName(giveid, strname2, sizeof strname2);
-					format(strtmp, sizeof strtmp, "Administrator %s has frozen %s[%d]", strname, strname2, giveid);
+					format(strtmp, sizeof strtmp, "Administrator %s froze %s[%d]", strname, strname2, giveid);
 					#if ADMSYS_SEND_ACTION_MSGS_TO_ALL
-						SendClientMessageToAll(ADMSYS_DEFAULT_COLOR, strtmp);
+						SendClientMessageToAll(ADMSYS_ADM_ACTION_COLOR, strtmp);
 					#else
-						SendMessageToAdmins(2, ADMSYS_DEFAULT_COLOR, strtmp);
+						SendMessageToAdmins(2, ADMSYS_ADM_ACTION_COLOR, strtmp);
 					#endif
-					format(strtmp, sizeof strtmp, "Administrator %s has frozen you", strname);
-					SendClientMessage(giveid, ADMSYS_DEFAULT_COLOR, strtmp);
+					format(strtmp, sizeof strtmp, "Administrator %s froze you", strname);
+					SendClientMessage(giveid, ADMSYS_ADM_ACTION_COLOR, strtmp);
 				}
 			}
 		}
@@ -1862,7 +1990,7 @@ admsys_cmd_unfreeze(playerid, const params[])
 {
 	if(IsPlayerAdminEx(playerid, 2))
 	{
-		new strtmp[97];
+		new strtmp[92];
 		if(admsys_isnull(params))
 		{
 			format(strtmp, sizeof strtmp, "%d", playerid);
@@ -1889,27 +2017,27 @@ admsys_cmd_unfreeze(playerid, const params[])
 							strcat(strtmp, strname2);
 						}
 					}
-					return SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, strtmp);
+					return SendClientMessage(playerid, ADMSYS_CMD_HELPER_COLOR, strtmp);
 				}
 				giveid = strval(strtmp);
 				if(!IsPlayerConnected(giveid))
 				{
 					if(i == 1) strtmp = "Player is not found";
 					else format(strtmp, sizeof strtmp, "Player %d is not found", i);
-					SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, strtmp);
+					SendClientMessage(playerid, ADMSYS_ERROR_COLOR, strtmp);
 				}
 				else
 				{
 					TogglePlayerControllable(giveid, 1);
 					GetPlayerName(giveid, strname2, sizeof strname2);
-					format(strtmp, sizeof strtmp, "Administrator %s has unfrozen %s[%d]", strname, strname2, giveid);
+					format(strtmp, sizeof strtmp, "Administrator %s unfroze %s[%d]", strname, strname2, giveid);
 					#if ADMSYS_SEND_ACTION_MSGS_TO_ALL
-						SendClientMessageToAll(ADMSYS_DEFAULT_COLOR, strtmp);
+						SendClientMessageToAll(ADMSYS_ADM_ACTION_COLOR, strtmp);
 					#else
-						SendMessageToAdmins(2, ADMSYS_DEFAULT_COLOR, strtmp);
+						SendMessageToAdmins(2, ADMSYS_ADM_ACTION_COLOR, strtmp);
 					#endif
-					format(strtmp, sizeof strtmp, "Administrator %s has unfrozen you", strname);
-					SendClientMessage(giveid, ADMSYS_DEFAULT_COLOR, strtmp);
+					format(strtmp, sizeof strtmp, "Administrator %s unfroze you", strname);
+					SendClientMessage(giveid, ADMSYS_ADM_ACTION_COLOR, strtmp);
 				}
 			}
 		}
@@ -1922,20 +2050,20 @@ admsys_cmd_slap(playerid, const params[])
 {
 	if(IsPlayerAdminEx(playerid, 2))
 	{
-		if(admsys_isnull(params)) return SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, "Use: /slap [id] [reason]");
+		if(admsys_isnull(params)) return SendClientMessage(playerid, ADMSYS_CMD_HELPER_COLOR, "Use: /slap [id] [reason]");
 		static strtmp[145];
 		new pos;
 		while(params[pos] > ' ') pos++;
 		strmid(strtmp, params, 0, pos);
-		if(!admsys_IsNumeric(strtmp)) return SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, "Use: /slap [id] [reason]");
+		if(!admsys_IsNumeric(strtmp)) return SendClientMessage(playerid, ADMSYS_CMD_HELPER_COLOR, "Use: /slap [id] [reason]");
 		new giveid = strval(strtmp);
-		if(!IsPlayerConnected(giveid)) return SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, "Player is not found");
+		if(!IsPlayerConnected(giveid)) return SendClientMessage(playerid, ADMSYS_ERROR_COLOR, "Player is not found");
 		if(GetPlayerAdminLevel(playerid) <= GetPlayerAdminLevel(giveid) && playerid != giveid)
-			return SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, "You can't apply this action to the administrator");
+			return SendClientMessage(playerid, ADMSYS_ERROR_COLOR, "You can't apply this action to the administrator");
 		if(IsPlayerSpectating(giveid))
-			return SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, "Player is in spectator mode");
+			return SendClientMessage(playerid, ADMSYS_ERROR_COLOR, "Player is in spectator mode");
 		while(params[pos] == ' ') pos++;
-		if(params[pos] == '\0') return SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, "Use: /slap [id] [reason]");
+		if(params[pos] == '\0') return SendClientMessage(playerid, ADMSYS_CMD_HELPER_COLOR, "Use: /slap [id] [reason]");
 		static strname[MAX_PLAYER_NAME + 1], strname2[MAX_PLAYER_NAME + 1];
 		new Float:pX, Float:pY, Float:pZ;
 		GetPlayerPos(giveid, pX, pY, pZ);
@@ -1945,12 +2073,12 @@ admsys_cmd_slap(playerid, const params[])
 		GetPlayerName(giveid, strname2, sizeof strname2);
 		format(strtmp, sizeof strtmp, "Administrator %s slapped %s[%d]. Reason: %s", strname, strname2, giveid, params[pos]);
 		#if ADMSYS_SEND_ACTION_MSGS_TO_ALL
-			SendClientMessageToAll(ADMSYS_DEFAULT_COLOR, strtmp);
+			SendClientMessageToAll(ADMSYS_ADM_ACTION_COLOR, strtmp);
 		#else
-			SendMessageToAdmins(2, ADMSYS_DEFAULT_COLOR, strtmp);
+			SendMessageToAdmins(2, ADMSYS_ADM_ACTION_COLOR, strtmp);
 		#endif
 		format(strtmp, sizeof strtmp, "Administrator %s slapped you. Reason: %s", strname, params[pos]);
-		SendClientMessage(giveid, ADMSYS_DEFAULT_COLOR, strtmp);
+		SendClientMessage(giveid, ADMSYS_ADM_ACTION_COLOR, strtmp);
 	}
 	return 1;
 }
@@ -1961,12 +2089,12 @@ admsys_cmd_goto(playerid, params[])
 	if(IsPlayerAdminEx(playerid, 2))
 	{
 		if(IsPlayerSpectating(playerid))
-			return SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, "You are in spectator mode");
+			return SendClientMessage(playerid, ADMSYS_ERROR_COLOR, "You are in spectator mode");
 		if(admsys_isnull(params) || !admsys_IsNumeric(params))
-			return SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, "Use: /goto [id]");
+			return SendClientMessage(playerid, ADMSYS_CMD_HELPER_COLOR, "Use: /goto [id]");
 		params[0] = strval(params);
-		if(params[0] == playerid) return SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, "You can't specify your id");
-		if(!IsPlayerConnected(params[0])) return SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, "Player is not found");
+		if(params[0] == playerid) return SendClientMessage(playerid, ADMSYS_ERROR_COLOR, "You can't specify your id");
+		if(!IsPlayerConnected(params[0])) return SendClientMessage(playerid, ADMSYS_ERROR_COLOR, "Player is not found");
 		static strtmp[54], strname[MAX_PLAYER_NAME + 1];
 		new Float:pX, Float:pY, Float:pZ;
 		GetPlayerPos(params[0], pX, pY, pZ);
@@ -2012,7 +2140,7 @@ admsys_cmd_gethere(playerid, const params[])
 {
 	if(IsPlayerAdminEx(playerid, 3))
 	{
-		if(admsys_isnull(params)) return SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, "Use: /gethere [id]");
+		if(admsys_isnull(params)) return SendClientMessage(playerid, ADMSYS_CMD_HELPER_COLOR, "Use: /gethere [id]");
 		if(!strcmp(params, "all", true)) return admsys_cmd_getall(playerid, "\1");
 		static strname[MAX_PLAYER_NAME + 1], strname2[MAX_PLAYER_NAME + 1];
 		new strtmp[67], interior, vw, Float:pX, Float:pY, Float:pZ;
@@ -2041,15 +2169,15 @@ admsys_cmd_gethere(playerid, const params[])
 							strcat(strtmp, strname2);
 						}
 					}
-					return SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, strtmp);
+					return SendClientMessage(playerid, ADMSYS_CMD_HELPER_COLOR, strtmp);
 				}
 				giveid = strval(strtmp);
-				if(giveid == playerid) SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, "You can't specify your id");
+				if(giveid == playerid) SendClientMessage(playerid, ADMSYS_ERROR_COLOR, "You can't specify your id");
 				else if(!IsPlayerConnected(giveid))
 				{
 					if(i == 1) strtmp = "Player is not found";
 					else format(strtmp, sizeof strtmp, "Player %d is not found", i);
-					SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, strtmp);
+					SendClientMessage(playerid, ADMSYS_ERROR_COLOR, strtmp);
 				}
 				else
 				{
@@ -2059,8 +2187,8 @@ admsys_cmd_gethere(playerid, const params[])
 					GetPlayerName(giveid, strname2, sizeof strname2);
 					format(strtmp, sizeof strtmp, "You teleported %s[%d] to himself", strname2, giveid);
 					SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, strtmp);
-					format(strtmp, sizeof strtmp, "AdministratorВ %s teleported you to himself", strname);
-					SendClientMessage(giveid, ADMSYS_DEFAULT_COLOR, strtmp);
+					format(strtmp, sizeof strtmp, "Administrator %s teleported you to himself", strname);
+					SendClientMessage(giveid, ADMSYS_ADM_ACTION_COLOR, strtmp);
 				}
 			}
 		}
@@ -2075,11 +2203,11 @@ admsys_cmd_gotoveh(playerid, params[])
 	if(IsPlayerAdminEx(playerid, 3))
 	{
 		if(IsPlayerSpectating(playerid))
-			return SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, "You are in spectator mode");
+			return SendClientMessage(playerid, ADMSYS_ERROR_COLOR, "You are in spectator mode");
 		if(admsys_isnull(params) || !admsys_IsNumeric(params))
-			return SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, "Use: /gotoveh [vehicle id]");
+			return SendClientMessage(playerid, ADMSYS_CMD_HELPER_COLOR, "Use: /gotoveh [vehicle id]");
 		params[0] = strval(params);
-		if(GetVehicleModel(params[0]) <= 0) return SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, "Vehicle is not found");
+		if(GetVehicleModel(params[0]) <= 0) return SendClientMessage(playerid, ADMSYS_ERROR_COLOR, "Vehicle is not found");
 		static strtmp[50];
 		new Float:vX, Float:vY, Float:vZ;
 		GetVehiclePos(params[0], vX, vY, vZ);
@@ -2091,35 +2219,73 @@ admsys_cmd_gotoveh(playerid, params[])
 	return 1;
 }
 
+CMD:gotopos(playerid, params[]) return admsys_cmd_gotopos(playerid, params);
+CMD:gotoposition(playerid, params[]) return admsys_cmd_gotopos(playerid, params);
+admsys_cmd_gotopos(playerid, params[])
+{
+	if(IsPlayerAdminEx(playerid, 3))
+	{
+		if(IsPlayerSpectating(playerid))
+			return SendClientMessage(playerid, ADMSYS_ERROR_COLOR, "You are in spectator mode");
+		if(admsys_isnull(params))
+			return SendClientMessage(playerid, ADMSYS_CMD_HELPER_COLOR, "Use: /gotopos [x] [y] [z]");
+		static strtmp[76];
+		new pos, oldpos;
+		while(params[pos] > ' ') pos++;
+		strmid(strtmp, params, 0, pos);
+		if(!admsys_IsNumericEx(strtmp))
+			return SendClientMessage(playerid, ADMSYS_CMD_HELPER_COLOR, "Use: /gotopos [x] [y] [z]");
+		new Float:cX = floatstr(strtmp);
+		while(params[pos] == ' ') pos++;
+		oldpos = pos;
+		while(params[pos] > ' ') pos++;
+		strmid(strtmp, params, oldpos, pos);
+		if(params[oldpos] == '\0' || !admsys_IsNumericEx(strtmp))
+			return SendClientMessage(playerid, ADMSYS_CMD_HELPER_COLOR, "Use: /gotopos [x] [y] [z]");
+		new Float:cY = floatstr(strtmp);
+		while(params[pos] == ' ') pos++;
+		oldpos = pos;
+		while(params[pos] > ' ') pos++;
+		strmid(strtmp, params, oldpos, pos);
+		if(params[oldpos] == '\0' || !admsys_IsNumericEx(strtmp))
+			return SendClientMessage(playerid, ADMSYS_CMD_HELPER_COLOR, "Use: /gotopos [x] [y] [z]");
+		new Float:cZ = floatstr(strtmp);
+		SetPlayerPos(playerid, cX, cY, cZ);
+		format(strtmp, sizeof strtmp, "You are teleported to coordinates %.4f, %.4f, %.4f", cX, cY, cZ);
+		SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, strtmp);
+	}
+	return 1;
+}
+
 CMD:ban(playerid, const params[]) return admsys_cmd_ban(playerid, params);
 admsys_cmd_ban(playerid, const params[])
 {
 	if(IsPlayerAdminEx(playerid, 3))
 	{
-		if(admsys_isnull(params)) return SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, "Use: /ban [id] [reason]");
+		if(admsys_isnull(params)) return SendClientMessage(playerid, ADMSYS_CMD_HELPER_COLOR, "Use: /ban [id] [reason]");
 		static strtmp[145];
 		new pos;
 		while(params[pos] > ' ') pos++;
 		strmid(strtmp, params, 0, pos);
-		if(!admsys_IsNumeric(strtmp)) return SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, "Use: /ban [id] [reason]");
+		if(!admsys_IsNumeric(strtmp)) return SendClientMessage(playerid, ADMSYS_CMD_HELPER_COLOR, "Use: /ban [id] [reason]");
 		new giveid = strval(strtmp);
-		if(!IsPlayerConnected(giveid)) return SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, "Player is not found");
+		if(!IsPlayerConnected(giveid)) return SendClientMessage(playerid, ADMSYS_ERROR_COLOR, "Player is not found");
 		if(GetPlayerAdminLevel(playerid) <= GetPlayerAdminLevel(giveid) && playerid != giveid)
-			return SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, "You can't apply this action to the administrator");
+			return SendClientMessage(playerid, ADMSYS_ERROR_COLOR, "You can't apply this action to the administrator");
 		while(params[pos] == ' ') pos++;
-		if(params[pos] == '\0') return SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, "Use: /ban [id] [reason]");
+		if(params[pos] == '\0') return SendClientMessage(playerid, ADMSYS_CMD_HELPER_COLOR, "Use: /ban [id] [reason]");
 		static strname[MAX_PLAYER_NAME + 1], strname2[MAX_PLAYER_NAME + 1];
 		CallRemoteFunction("OnPlayerBan", "iii", giveid, playerid, false);
 		GetPlayerName(playerid, strname, sizeof strname);
 		GetPlayerName(giveid, strname2, sizeof strname2);
 		format(strtmp, sizeof strtmp, "Administrator %s has banned %s[%d]. Reason: %s", strname, strname2, giveid, params[pos]);
 		#if ADMSYS_SEND_ACTION_MSGS_TO_ALL
-			SendClientMessageToAll(ADMSYS_DEFAULT_COLOR, strtmp);
+			SendClientMessageToAll(ADMSYS_ADM_ACTION_COLOR, strtmp);
 		#else
-			SendMessageToAdmins(3, ADMSYS_DEFAULT_COLOR, strtmp);
+			SendMessageToAdmins(3, ADMSYS_ADM_ACTION_COLOR, strtmp);
 		#endif
 		format(strtmp, sizeof strtmp, "Administrator %s has banned you. Reason: %s", strname, params[pos]);
-		SendClientMessage(giveid, ADMSYS_DEFAULT_COLOR, strtmp);
+		SendClientMessage(giveid, ADMSYS_ADM_ACTION_COLOR, strtmp);
 		SetTimerEx("BanWithDelay", 500, 0, "i", giveid);
 	}
 	return 1;
@@ -2131,17 +2297,17 @@ admsys_cmd_gmtest(playerid, params[])
 	if(IsPlayerAdminEx(playerid, 3))
 	{
 		if(admsys_isnull(params) || !admsys_IsNumeric(params))
-			return SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, "Use: /gmtest [id]");
+			return SendClientMessage(playerid, ADMSYS_CMD_HELPER_COLOR, "Use: /gmtest [id]");
 		params[0] = strval(params);
-		if(!IsPlayerConnected(params[0])) return SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, "Player is not found");
+		if(!IsPlayerConnected(params[0])) return SendClientMessage(playerid, ADMSYS_ERROR_COLOR, "Player is not found");
 		if(AdmSysInfo[playerid][asGmTestID] != INVALID_PLAYER_ID)
-			return SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, "You already checks someone on GodMode");
+			return SendClientMessage(playerid, ADMSYS_ERROR_COLOR, "You are already checking someone for GodMode");
 		if(AdmSysInfo[params[0]][asGmTest])
-			return SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, "Player are already checked for GodMode");
+			return SendClientMessage(playerid, ADMSYS_ERROR_COLOR, "Player is already being checked for GodMode");
 		if(!AdmSysInfo[params[0]][asIsSpawned])
-			return SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, "Player is not spawned");
+			return SendClientMessage(playerid, ADMSYS_ERROR_COLOR, "Player is not spawned");
 		if(IsPlayerSpectating(params[0]))
-			return SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, "Player is in spectator mode");
+			return SendClientMessage(playerid, ADMSYS_ERROR_COLOR, "Player is in spectator mode");
 		new Float:bx, Float:by, Float:bz;
 		GetPlayerPos(params[0], bx, by, bz);
 		if(!IsPlayerInAnyVehicle(params[0]))
@@ -2190,28 +2356,28 @@ admsys_cmd_spawn(playerid, const params[])
 							strcat(strtmp, strname2);
 						}
 					}
-					return SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, strtmp);
+					return SendClientMessage(playerid, ADMSYS_CMD_HELPER_COLOR, strtmp);
 				}
 				giveid = strval(strtmp);
 				if(!IsPlayerConnected(giveid))
 				{
 					if(i == 1) strtmp = "Player is not found";
 					else format(strtmp, sizeof strtmp, "Player %d is not found", i);
-					SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, strtmp);
+					SendClientMessage(playerid, ADMSYS_ERROR_COLOR, strtmp);
 				}
 				else
 				{
 					if(IsPlayerSpectating(giveid)) TogglePlayerSpectating(giveid, 0);
 					else SpawnPlayer(giveid);
 					GetPlayerName(giveid, strname2, sizeof strname2);
-					format(strtmp, sizeof strtmp, "AdministratorВ %s has spawned %s[%d]", strname, strname2, giveid);
+					format(strtmp, sizeof strtmp, "Administrator %s has spawned %s[%d]", strname, strname2, giveid);
 					#if ADMSYS_SEND_ACTION_MSGS_TO_ALL
-						SendClientMessageToAll(ADMSYS_DEFAULT_COLOR, strtmp);
+						SendClientMessageToAll(ADMSYS_ADM_ACTION_COLOR, strtmp);
 					#else
-						SendMessageToAdmins(3, ADMSYS_DEFAULT_COLOR, strtmp);
+						SendMessageToAdmins(3, ADMSYS_ADM_ACTION_COLOR, strtmp);
 					#endif
-					format(strtmp, sizeof strtmp, "AdministratorВ %s has spawned you", strname);
-					SendClientMessage(giveid, ADMSYS_DEFAULT_COLOR, strtmp);
+					format(strtmp, sizeof strtmp, "Administrator %s has spawned you", strname);
+					SendClientMessage(giveid, ADMSYS_ADM_ACTION_COLOR, strtmp);
 				}
 			}
 		}
@@ -2251,20 +2417,20 @@ admsys_cmd_unwarn(playerid, const params[])
 							strcat(strtmp, strname2);
 						}
 					}
-					return SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, strtmp);
+					return SendClientMessage(playerid, ADMSYS_CMD_HELPER_COLOR, strtmp);
 				}
 				giveid = strval(strtmp);
 				if(!IsPlayerConnected(giveid))
 				{
 					if(i == 1) strtmp = "Player is not found";
 					else format(strtmp, sizeof strtmp, "Player %d is not found", i);
-					SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, strtmp);
+					SendClientMessage(playerid, ADMSYS_ERROR_COLOR, strtmp);
 				}
 				else if(AdmSysInfo[giveid][asWarns] < 1)
 				{
 					if(i == 1) strtmp = "Player has no warns";
 					else format(strtmp, sizeof strtmp, "Player %d has no warns", i);
-					SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, strtmp);
+					SendClientMessage(playerid, ADMSYS_ERROR_COLOR, strtmp);
 				}
 				else
 				{
@@ -2272,12 +2438,12 @@ admsys_cmd_unwarn(playerid, const params[])
 					GetPlayerName(giveid, strname2, sizeof strname2);
 					format(strtmp, sizeof strtmp, "Administrator %s has removed a warn from %s[%d]", strname, strname2, giveid);
 					#if ADMSYS_SEND_ACTION_MSGS_TO_ALL
-						SendClientMessageToAll(ADMSYS_DEFAULT_COLOR, strtmp);
+						SendClientMessageToAll(ADMSYS_ADM_ACTION_COLOR, strtmp);
 					#else
-						SendMessageToAdmins(3, ADMSYS_DEFAULT_COLOR, strtmp);
+						SendMessageToAdmins(3, ADMSYS_ADM_ACTION_COLOR, strtmp);
 					#endif
 					format(strtmp, sizeof strtmp, "Administrator %s has removed a warn from you", strname);
-					SendClientMessage(giveid, ADMSYS_DEFAULT_COLOR, strtmp);
+					SendClientMessage(giveid, ADMSYS_ADM_ACTION_COLOR, strtmp);
 				}
 			}
 		}
@@ -2291,18 +2457,18 @@ admsys_cmd_banip(playerid, const params[])
 {
 	if(IsPlayerAdminEx(playerid, 3))
 	{
-		if(admsys_isnull(params)) return SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, "Use: /banip [IP]");
+		if(admsys_isnull(params)) return SendClientMessage(playerid, ADMSYS_CMD_HELPER_COLOR, "Use: /banip [IP]");
 		for(new i, c, j = strlen(params); i < j; i++)
 		{
 			switch(params[i])
 			{
 				case '*':
 				{
-					if(c < 2) return SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, "IP address entered incorrectly");
+					if(c < 2) return SendClientMessage(playerid, ADMSYS_ERROR_COLOR, "IP address entered incorrectly");
 				}
 				case '.': c++;
 				case '0'..'9':{}
-				default: return SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, "IP address entered incorrectly");
+				default: return SendClientMessage(playerid, ADMSYS_ERROR_COLOR, "IP address entered incorrectly");
 			}
 		}
 		static strtmp[74], strname[MAX_PLAYER_NAME + 1];
@@ -2312,9 +2478,9 @@ admsys_cmd_banip(playerid, const params[])
 		GetPlayerName(playerid, strname, sizeof strname);
 		format(strtmp, sizeof strtmp, "Administrator %s has blocked IP %s", strname, params);
 		#if ADMSYS_SEND_ACTION_MSGS_TO_ALL
-			SendClientMessageToAll(ADMSYS_DEFAULT_COLOR, strtmp);
+			SendClientMessageToAll(ADMSYS_ADM_ACTION_COLOR, strtmp);
 		#else
-			SendMessageToAdmins(3, ADMSYS_DEFAULT_COLOR, strtmp);
+			SendMessageToAdmins(3, ADMSYS_ADM_ACTION_COLOR, strtmp);
 		#endif
 	}
 	return 1;
@@ -2332,9 +2498,9 @@ admsys_cmd_cc(playerid, const params[])
 		GetPlayerName(playerid, strname, sizeof strname);
 		format(strtmp, sizeof strtmp, "Administrator %s has cleared the chat", strname);
 		#if ADMSYS_SEND_ACTION_MSGS_TO_ALL
-			SendClientMessageToAll(ADMSYS_DEFAULT_COLOR, strtmp);
+			SendClientMessageToAll(ADMSYS_ADM_ACTION_COLOR, strtmp);
 		#else
-			SendMessageToAdmins(3, ADMSYS_DEFAULT_COLOR, strtmp);
+			SendMessageToAdmins(3, ADMSYS_ADM_ACTION_COLOR, strtmp);
 		#endif
 	}
 	return 1;
@@ -2346,21 +2512,21 @@ admsys_cmd_sethealth(playerid, const params[])
 	if(IsPlayerAdminEx(playerid, 4))
 	{
 		if(admsys_isnull(params))
-			return SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, "Use: /sethealth [id] [health]");
-		static strtmp[68];
+			return SendClientMessage(playerid, ADMSYS_CMD_HELPER_COLOR, "Use: /sethealth [id] [health]");
+		static strtmp[72];
 		new pos, oldpos;
 		while(params[pos] > ' ') pos++;
 		strmid(strtmp, params, 0, pos);
 		if(!admsys_IsNumeric(strtmp))
-			return SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, "Use: /sethealth [id] [health]");
+			return SendClientMessage(playerid, ADMSYS_CMD_HELPER_COLOR, "Use: /sethealth [id] [health]");
 		new giveid = strval(strtmp);
-		if(!IsPlayerConnected(giveid)) return SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, "Player is not found");
+		if(!IsPlayerConnected(giveid)) return SendClientMessage(playerid, ADMSYS_ERROR_COLOR, "Player is not found");
 		while(params[pos] == ' ') pos++;
 		oldpos = pos;
 		while(params[pos] > ' ') pos++;
 		strmid(strtmp, params, oldpos, pos);
 		if(params[oldpos] == '\0' || !admsys_IsNumeric(strtmp))
-			return SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, "Use: /sethealth [id] [health]");
+			return SendClientMessage(playerid, ADMSYS_CMD_HELPER_COLOR, "Use: /sethealth [id] [health]");
 		static strname[MAX_PLAYER_NAME + 1];
 		new Float:ghealth = strval(strtmp);
 		AdmSysInfo[playerid][asLastAction] = 1;
@@ -2368,11 +2534,11 @@ admsys_cmd_sethealth(playerid, const params[])
 		AdmSysInfo[playerid][asLastActionID] = giveid;
 		SetPlayerHealth(giveid, ghealth);
 		GetPlayerName(giveid, strname, sizeof strname);
-		format(strtmp, sizeof strtmp, "You have set %.1f health to %s[%d]", ghealth, strname, giveid);
+		format(strtmp, sizeof strtmp, "You have set health to %.1f to %s[%d]", ghealth, strname, giveid);
 		SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, strtmp);
 		GetPlayerName(playerid, strname, sizeof strname);
-		format(strtmp, sizeof strtmp, "Administrator %s has set you %.1f health", strname, ghealth);
-		SendClientMessage(giveid, ADMSYS_DEFAULT_COLOR, strtmp);
+		format(strtmp, sizeof strtmp, "Administrator %s has set your health to %.1f", strname, ghealth);
+		SendClientMessage(giveid, ADMSYS_ADM_ACTION_COLOR, strtmp);
 	}
 	return 1;
 }
@@ -2383,21 +2549,21 @@ admsys_cmd_setarmour(playerid, const params[])
 	if(IsPlayerAdminEx(playerid, 4))
 	{
 		if(admsys_isnull(params))
-			return SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, "Use: /setarmour [id] [armour]");
-		static strtmp[68];
+			return SendClientMessage(playerid, ADMSYS_CMD_HELPER_COLOR, "Use: /setarmour [id] [armour]");
+		static strtmp[72];
 		new pos, oldpos;
 		while(params[pos] > ' ') pos++;
 		strmid(strtmp, params, 0, pos);
 		if(!admsys_IsNumeric(strtmp))
-			return SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, "Use: /setarmour [id] [armour]");
+			return SendClientMessage(playerid, ADMSYS_CMD_HELPER_COLOR, "Use: /setarmour [id] [armour]");
 		new giveid = strval(strtmp);
-		if(!IsPlayerConnected(giveid)) return SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, "Player is not found");
+		if(!IsPlayerConnected(giveid)) return SendClientMessage(playerid, ADMSYS_ERROR_COLOR, "Player is not found");
 		while(params[pos] == ' ') pos++;
 		oldpos = pos;
 		while(params[pos] > ' ') pos++;
 		strmid(strtmp, params, oldpos, pos);
 		if(params[oldpos] == '\0' || !admsys_IsNumeric(strtmp))
-			return SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, "Use: /setarmour [id] [armour]");
+			return SendClientMessage(playerid, ADMSYS_CMD_HELPER_COLOR, "Use: /setarmour [id] [armour]");
 		static strname[MAX_PLAYER_NAME + 1];
 		new Float:garmour = strval(strtmp);
 		AdmSysInfo[playerid][asLastAction] = 2;
@@ -2405,11 +2571,11 @@ admsys_cmd_setarmour(playerid, const params[])
 		AdmSysInfo[playerid][asLastActionID] = giveid;
 		SetPlayerArmour(giveid, garmour);
 		GetPlayerName(giveid, strname, sizeof strname);
-		format(strtmp, sizeof strtmp, "You have set %.1f armour to %s[%d]", garmour, strname, giveid);
+		format(strtmp, sizeof strtmp, "You have set armour to %.1f to %s[%d]", garmour, strname, giveid);
 		SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, strtmp);
 		GetPlayerName(playerid, strname, sizeof strname);
-		format(strtmp, sizeof strtmp, "Administrator %s has set you %.1f armour", strname, garmour);
-		SendClientMessage(giveid, ADMSYS_DEFAULT_COLOR, strtmp);
+		format(strtmp, sizeof strtmp, "Administrator %s has set your armour to %.1f", strname, garmour);
+		SendClientMessage(giveid, ADMSYS_ADM_ACTION_COLOR, strtmp);
 	}
 	return 1;
 }
@@ -2419,20 +2585,20 @@ admsys_cmd_setmoney(playerid, const params[])
 {
 	if(IsPlayerAdminEx(playerid, 4))
 	{
-		if(admsys_isnull(params)) return SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, "Use: /setmoney [id] [money]");
+		if(admsys_isnull(params)) return SendClientMessage(playerid, ADMSYS_CMD_HELPER_COLOR, "Use: /setmoney [id] [money]");
 		static strtmp[64];
 		new pos, oldpos;
 		while(params[pos] > ' ') pos++;
 		strmid(strtmp, params, 0, pos);
-		if(!admsys_IsNumeric(strtmp)) return SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, "Use: /setmoney [id] [money]");
+		if(!admsys_IsNumeric(strtmp)) return SendClientMessage(playerid, ADMSYS_CMD_HELPER_COLOR, "Use: /setmoney [id] [money]");
 		new giveid = strval(strtmp);
-		if(!IsPlayerConnected(giveid)) return SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, "Player is not found");
+		if(!IsPlayerConnected(giveid)) return SendClientMessage(playerid, ADMSYS_ERROR_COLOR, "Player is not found");
 		while(params[pos] == ' ') pos++;
 		oldpos = pos;
 		while(params[pos] > ' ') pos++;
 		strmid(strtmp, params, oldpos, pos);
 		if(params[oldpos] == '\0' || !admsys_IsNumeric(strtmp))
-			return SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, "Use: /setmoney [id] [money]");
+			return SendClientMessage(playerid, ADMSYS_CMD_HELPER_COLOR, "Use: /setmoney [id] [money]");
 		static strname[MAX_PLAYER_NAME + 1];
 		new gmoney = strval(strtmp);
 		AdmSysInfo[playerid][asLastAction] = 3;
@@ -2445,7 +2611,42 @@ admsys_cmd_setmoney(playerid, const params[])
 		SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, strtmp);
 		GetPlayerName(playerid, strname, sizeof strname);
 		format(strtmp, sizeof strtmp, "Administrator %s has set you $%d", strname, gmoney);
-		SendClientMessage(giveid, ADMSYS_DEFAULT_COLOR, strtmp);
+		SendClientMessage(giveid, ADMSYS_ADM_ACTION_COLOR, strtmp);
+	}
+	return 1;
+}
+
+CMD:givemoney(playerid, const params[]) return admsys_cmd_givemoney(playerid, params);
+admsys_cmd_givemoney(playerid, const params[])
+{
+	if(IsPlayerAdminEx(playerid, 4))
+	{
+		if(admsys_isnull(params)) return SendClientMessage(playerid, ADMSYS_CMD_HELPER_COLOR, "Use: /givemoney [id] [money]");
+		static strtmp[62];
+		new pos, oldpos;
+		while(params[pos] > ' ') pos++;
+		strmid(strtmp, params, 0, pos);
+		if(!admsys_IsNumeric(strtmp)) return SendClientMessage(playerid, ADMSYS_CMD_HELPER_COLOR, "Use: /givemoney [id] [money]");
+		new giveid = strval(strtmp);
+		if(!IsPlayerConnected(giveid)) return SendClientMessage(playerid, ADMSYS_ERROR_COLOR, "Player is not found");
+		while(params[pos] == ' ') pos++;
+		oldpos = pos;
+		while(params[pos] > ' ') pos++;
+		strmid(strtmp, params, oldpos, pos);
+		if(params[oldpos] == '\0' || !admsys_IsNumeric(strtmp))
+			return SendClientMessage(playerid, ADMSYS_CMD_HELPER_COLOR, "Use: /givemoney [id] [money]");
+		static strname[MAX_PLAYER_NAME + 1];
+		new gmoney = strval(strtmp);
+		AdmSysInfo[playerid][asLastAction] = 4;
+		AdmSysInfo[playerid][asLastIntData][0] = gmoney;
+		AdmSysInfo[playerid][asLastActionID] = giveid;
+		GivePlayerMoney(giveid, gmoney);
+		GetPlayerName(giveid, strname, sizeof strname);
+		format(strtmp, sizeof strtmp, "You gave $%d to %s[%d]", gmoney, strname, giveid);
+		SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, strtmp);
+		GetPlayerName(playerid, strname, sizeof strname);
+		format(strtmp, sizeof strtmp, "Administrator %s gave you $%d", strname, gmoney);
+		SendClientMessage(giveid, ADMSYS_ADM_ACTION_COLOR, strtmp);
 	}
 	return 1;
 }
@@ -2455,32 +2656,32 @@ admsys_cmd_setscore(playerid, const params[])
 {
 	if(IsPlayerAdminEx(playerid, 4))
 	{
-		if(admsys_isnull(params)) return SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, "Use: /setscore [id] [score]");
-		static strtmp[64];
+		if(admsys_isnull(params)) return SendClientMessage(playerid, ADMSYS_CMD_HELPER_COLOR, "Use: /setscore [id] [score]");
+		static strtmp[66];
 		new pos, oldpos;
 		while(params[pos] > ' ') pos++;
 		strmid(strtmp, params, 0, pos);
-		if(!admsys_IsNumeric(strtmp)) return SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, "Use: /setscore [id] [score]");
+		if(!admsys_IsNumeric(strtmp)) return SendClientMessage(playerid, ADMSYS_CMD_HELPER_COLOR, "Use: /setscore [id] [score]");
 		new giveid = strval(strtmp);
-		if(!IsPlayerConnected(giveid)) return SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, "Player is not found");
+		if(!IsPlayerConnected(giveid)) return SendClientMessage(playerid, ADMSYS_ERROR_COLOR, "Player is not found");
 		while(params[pos] == ' ') pos++;
 		oldpos = pos;
 		while(params[pos] > ' ') pos++;
 		strmid(strtmp, params, oldpos, pos);
 		if(params[oldpos] == '\0' || !admsys_IsNumeric(strtmp))
-			return SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, "Use: /setscore [id] [score]");
+			return SendClientMessage(playerid, ADMSYS_CMD_HELPER_COLOR, "Use: /setscore [id] [score]");
 		static strname[MAX_PLAYER_NAME + 1];
 		new gscore = strval(strtmp);
-		AdmSysInfo[playerid][asLastAction] = 4;
+		AdmSysInfo[playerid][asLastAction] = 5;
 		AdmSysInfo[playerid][asLastIntData][0] = GetPlayerScore(giveid);
 		AdmSysInfo[playerid][asLastActionID] = giveid;
 		SetPlayerScore(giveid, gscore);
 		GetPlayerName(giveid, strname, sizeof strname);
-		format(strtmp, sizeof strtmp, "You have set the score to %d to %s[%d]", gscore, strname, giveid);
+		format(strtmp, sizeof strtmp, "You have set score to %d to %s[%d]", gscore, strname, giveid);
 		SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, strtmp);
 		GetPlayerName(playerid, strname, sizeof strname);
-		format(strtmp, sizeof strtmp, "Administrator %s has set you score to %d", strname, gscore);
-		SendClientMessage(giveid, ADMSYS_DEFAULT_COLOR, strtmp);
+		format(strtmp, sizeof strtmp, "Administrator %s has set your score to %d", strname, gscore);
+		SendClientMessage(giveid, ADMSYS_ADM_ACTION_COLOR, strtmp);
 	}
 	return 1;
 }
@@ -2490,24 +2691,24 @@ admsys_cmd_setskin(playerid, const params[])
 {
 	if(IsPlayerAdminEx(playerid, 4))
 	{
-		if(admsys_isnull(params)) return SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, "Use: /setskin [id] [skin]");
-		static strtmp[60];
+		if(admsys_isnull(params)) return SendClientMessage(playerid, ADMSYS_CMD_HELPER_COLOR, "Use: /setskin [id] [skin]");
+		static strtmp[66];
 		new pos, oldpos;
 		while(params[pos] > ' ') pos++;
 		strmid(strtmp, params, 0, pos);
-		if(!admsys_IsNumeric(strtmp)) return SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, "Use: /setskin [id] [skin]");
+		if(!admsys_IsNumeric(strtmp)) return SendClientMessage(playerid, ADMSYS_CMD_HELPER_COLOR, "Use: /setskin [id] [skin]");
 		new giveid = strval(strtmp);
-		if(!IsPlayerConnected(giveid)) return SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, "Player is not found");
+		if(!IsPlayerConnected(giveid)) return SendClientMessage(playerid, ADMSYS_ERROR_COLOR, "Player is not found");
 		while(params[pos] == ' ') pos++;
 		oldpos = pos;
 		while(params[pos] > ' ') pos++;
 		strmid(strtmp, params, oldpos, pos);
 		if(params[oldpos] == '\0' || !admsys_IsNumeric(strtmp))
-			return SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, "Use: /setskin [id] [skin]");
+			return SendClientMessage(playerid, ADMSYS_CMD_HELPER_COLOR, "Use: /setskin [id] [skin]");
 		new skinid = strval(strtmp);
-		if(!(0 <= skinid <= 311)) return SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, "Use ID of skin from 0 to 311");
+		if(!(0 <= skinid <= 311)) return SendClientMessage(playerid, ADMSYS_ERROR_COLOR, "Skin ID must be from 0 to 311");
 		static strname[MAX_PLAYER_NAME + 1];
-		AdmSysInfo[playerid][asLastAction] = 5;
+		AdmSysInfo[playerid][asLastAction] = 6;
 		AdmSysInfo[playerid][asLastIntData][0] = GetPlayerSkin(giveid);
 		AdmSysInfo[playerid][asLastActionID] = giveid;
 		SetPlayerSkin(giveid, skinid);
@@ -2516,7 +2717,7 @@ admsys_cmd_setskin(playerid, const params[])
 		SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, strtmp);
 		GetPlayerName(playerid, strname, sizeof strname);
 		format(strtmp, sizeof strtmp, "Administrator %s has changed your skin to %d", strname, skinid);
-		SendClientMessage(giveid, ADMSYS_DEFAULT_COLOR, strtmp);
+		SendClientMessage(giveid, ADMSYS_ADM_ACTION_COLOR, strtmp);
 	}
 	return 1;
 }
@@ -2527,23 +2728,23 @@ admsys_cmd_setint(playerid, const params[])
 {
 	if(IsPlayerAdminEx(playerid, 4))
 	{
-		if(admsys_isnull(params)) return SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, "Use: /setint [id] [interior]");
+		if(admsys_isnull(params)) return SendClientMessage(playerid, ADMSYS_CMD_HELPER_COLOR, "Use: /setint [id] [interior]");
 		static strtmp[70];
 		new pos, oldpos;
 		while(params[pos] > ' ') pos++;
 		strmid(strtmp, params, 0, pos);
-		if(!admsys_IsNumeric(strtmp)) return SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, "Use: /setint [id] [interior]");
+		if(!admsys_IsNumeric(strtmp)) return SendClientMessage(playerid, ADMSYS_CMD_HELPER_COLOR, "Use: /setint [id] [interior]");
 		new giveid = strval(strtmp);
-		if(!IsPlayerConnected(giveid)) return SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, "Player is not found");
+		if(!IsPlayerConnected(giveid)) return SendClientMessage(playerid, ADMSYS_ERROR_COLOR, "Player is not found");
 		while(params[pos] == ' ') pos++;
 		oldpos = pos;
 		while(params[pos] > ' ') pos++;
 		strmid(strtmp, params, oldpos, pos);
 		if(params[oldpos] == '\0' || !admsys_IsNumeric(strtmp))
-			return SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, "Use: /setint [id] [interior]");
+			return SendClientMessage(playerid, ADMSYS_CMD_HELPER_COLOR, "Use: /setint [id] [interior]");
 		static strname[MAX_PLAYER_NAME + 1];
 		new gint = strval(strtmp);
-		AdmSysInfo[playerid][asLastAction] = 6;
+		AdmSysInfo[playerid][asLastAction] = 7;
 		AdmSysInfo[playerid][asLastIntData][0] = GetPlayerInterior(giveid);
 		AdmSysInfo[playerid][asLastActionID] = giveid;
 		SetPlayerInterior(giveid, gint);
@@ -2552,7 +2753,7 @@ admsys_cmd_setint(playerid, const params[])
 		SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, strtmp);
 		GetPlayerName(playerid, strname, sizeof strname);
 		format(strtmp, sizeof strtmp, "Administrator %s has set your interior to %d", strname, gint);
-		SendClientMessage(giveid, ADMSYS_DEFAULT_COLOR, strtmp);
+		SendClientMessage(giveid, ADMSYS_ADM_ACTION_COLOR, strtmp);
 	}
 	return 1;
 }
@@ -2564,24 +2765,24 @@ admsys_cmd_setvw(playerid, const params[])
 	if(IsPlayerAdminEx(playerid, 4))
 	{
 		if(admsys_isnull(params))
-			return SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, "Use: /setvw [id] [vw]");
+			return SendClientMessage(playerid, ADMSYS_CMD_HELPER_COLOR, "Use: /setvw [id] [vw]");
 		static strtmp[82];
 		new pos, oldpos;
 		while(params[pos] > ' ') pos++;
 		strmid(strtmp, params, 0, pos);
 		if(!admsys_IsNumeric(strtmp))
-			return SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, "Use: /setvw [id] [vw]");
+			return SendClientMessage(playerid, ADMSYS_CMD_HELPER_COLOR, "Use: /setvw [id] [vw]");
 		new giveid = strval(strtmp);
-		if(!IsPlayerConnected(giveid)) return SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, "Player is not found");
+		if(!IsPlayerConnected(giveid)) return SendClientMessage(playerid, ADMSYS_ERROR_COLOR, "Player is not found");
 		while(params[pos] == ' ') pos++;
 		oldpos = pos;
 		while(params[pos] > ' ') pos++;
 		strmid(strtmp, params, oldpos, pos);
 		if(params[oldpos] == '\0' || !admsys_IsNumeric(strtmp))
-			return SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, "Use: /setvw [id] [vw]");
+			return SendClientMessage(playerid, ADMSYS_CMD_HELPER_COLOR, "Use: /setvw [id] [vw]");
 		static strname[MAX_PLAYER_NAME + 1];
 		new gvw = strval(strtmp);
-		AdmSysInfo[playerid][asLastAction] = 7;
+		AdmSysInfo[playerid][asLastAction] = 8;
 		AdmSysInfo[playerid][asLastIntData][0] = GetPlayerVirtualWorld(giveid);
 		AdmSysInfo[playerid][asLastActionID] = giveid;
 		SetPlayerVirtualWorld(giveid, gvw);
@@ -2590,7 +2791,7 @@ admsys_cmd_setvw(playerid, const params[])
 		SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, strtmp);
 		GetPlayerName(playerid, strname, sizeof strname);
 		format(strtmp, sizeof strtmp, "Administrator %s has set your virtual world to %d", strname, gvw);
-		SendClientMessage(giveid, ADMSYS_DEFAULT_COLOR, strtmp);
+		SendClientMessage(giveid, ADMSYS_ADM_ACTION_COLOR, strtmp);
 	}
 	return 1;
 }
@@ -2601,42 +2802,42 @@ admsys_cmd_giveweapon(playerid, const params[])
 	if(IsPlayerAdminEx(playerid, 4))
 	{
 		if(admsys_isnull(params))
-			return SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, "Use: /giveweapon [id] [weapon] [ammo]");
-		static strtmp[79];
+			return SendClientMessage(playerid, ADMSYS_CMD_HELPER_COLOR, "Use: /giveweapon [id] [weapon] [ammo]");
+		static strtmp[77];
 		new pos, oldpos;
 		while(params[pos] > ' ') pos++;
 		strmid(strtmp, params, 0, pos);
 		if(!admsys_IsNumeric(strtmp))
-			return SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, "Use: /giveweapon [id] [weapon] [ammo]");
+			return SendClientMessage(playerid, ADMSYS_CMD_HELPER_COLOR, "Use: /giveweapon [id] [weapon] [ammo]");
 		new giveid = strval(strtmp);
-		if(!IsPlayerConnected(giveid)) return SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, "Player is not found");
+		if(!IsPlayerConnected(giveid)) return SendClientMessage(playerid, ADMSYS_ERROR_COLOR, "Player is not found");
 		while(params[pos] == ' ') pos++;
 		oldpos = pos;
 		while(params[pos] > ' ') pos++;
 		strmid(strtmp, params, oldpos, pos);
 		if(params[oldpos] == '\0' || !admsys_IsNumeric(strtmp))
-			return SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, "Use: /giveweapon [id] [weapon] [ammo]");
+			return SendClientMessage(playerid, ADMSYS_CMD_HELPER_COLOR, "Use: /giveweapon [id] [weapon] [ammo]");
 		new gweapon = strval(strtmp);
-		if(!(0 <= gweapon <= 46)) return SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, "Use the ID of weapon from 0 to 46");
+		if(!(0 <= gweapon <= 46)) return SendClientMessage(playerid, ADMSYS_ERROR_COLOR, "Weapon ID must be from 0 to 46");
 		while(params[pos] == ' ') pos++;
 		oldpos = pos;
 		while(params[pos] > ' ') pos++;
 		strmid(strtmp, params, oldpos, pos);
 		if(params[oldpos] == '\0' || !admsys_IsNumeric(strtmp))
-			return SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, "Use: /giveweapon [id] [weapon] [ammo]");
+			return SendClientMessage(playerid, ADMSYS_CMD_HELPER_COLOR, "Use: /giveweapon [id] [weapon] [ammo]");
 		static strname[MAX_PLAYER_NAME + 1];
 		new gammo = strval(strtmp);
-		AdmSysInfo[playerid][asLastAction] = 8;
+		AdmSysInfo[playerid][asLastAction] = 9;
 		AdmSysInfo[playerid][asLastIntData][0] = gweapon;
 		AdmSysInfo[playerid][asLastIntData][1] = gammo;
 		AdmSysInfo[playerid][asLastActionID] = giveid;
 		GivePlayerWeapon(giveid, gweapon, gammo);
 		GetPlayerName(giveid, strname, sizeof strname);
-		format(strtmp, sizeof strtmp, "You have gave the weapon %d with %d ammo to %s[%d]", gweapon, gammo, strname, giveid);
+		format(strtmp, sizeof strtmp, "You gave the weapon %d with %d ammo to %s[%d]", gweapon, gammo, strname, giveid);
 		SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, strtmp);
 		GetPlayerName(playerid, strname, sizeof strname);
 		format(strtmp, sizeof strtmp, "Administrator %s gave you weapon %d with %d ammo", strname, gweapon, gammo);
-		SendClientMessage(giveid, ADMSYS_DEFAULT_COLOR, strtmp);
+		SendClientMessage(giveid, ADMSYS_ADM_ACTION_COLOR, strtmp);
 	}
 	return 1;
 }
@@ -2649,16 +2850,16 @@ admsys_cmd_repairveh(playerid, params[])
 	{
 		if(admsys_isnull(params))
 		{
-			if(!IsPlayerInAnyVehicle(playerid)) return SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, "You are not in vehicle");
+			if(!IsPlayerInAnyVehicle(playerid)) return SendClientMessage(playerid, ADMSYS_ERROR_COLOR, "You are not in vehicle");
 			params[0] = GetPlayerVehicleID(playerid);
 		}
 		else
 		{
 			if(!admsys_IsNumeric(params))
-				return SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, "Use: /repairveh [vehicle id]");
+				return SendClientMessage(playerid, ADMSYS_CMD_HELPER_COLOR, "Use: /repairveh [vehicle id]");
 			params[0] = strval(params);
 			if(GetVehicleModel(params[0]) <= 0)
-				return SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, "Vehicle is not found");
+				return SendClientMessage(playerid, ADMSYS_ERROR_COLOR, "Vehicle is not found");
 		}
 		static strtmp[25];
 		RepairVehicle(params[0]);
@@ -2674,13 +2875,13 @@ admsys_cmd_unbanip(playerid, const params[])
 {
 	if(IsPlayerAdminEx(playerid, 4))
 	{
-		if(admsys_isnull(params)) return SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, "Use: /unbanip [IP]");
+		if(admsys_isnull(params)) return SendClientMessage(playerid, ADMSYS_CMD_HELPER_COLOR, "Use: /unbanip [IP]");
 		for(new i, j = strlen(params); i < j; i++)
 		{
 			switch(params[i])
 			{
 				case '*', '.', '0'..'9':{}
-				default: return SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, "IP address entered incorrectly");
+				default: return SendClientMessage(playerid, ADMSYS_ERROR_COLOR, "IP address entered incorrectly");
 			}
 		}
 		static strtmp[76], strname[MAX_PLAYER_NAME + 1];
@@ -2690,9 +2891,9 @@ admsys_cmd_unbanip(playerid, const params[])
 		GetPlayerName(playerid, strname, sizeof strname);
 		format(strtmp, sizeof strtmp, "Administrator %s unblocked the IP %s", strname, params);
 		#if ADMSYS_SEND_ACTION_MSGS_TO_ALL
-			SendClientMessageToAll(ADMSYS_DEFAULT_COLOR, strtmp);
+			SendClientMessageToAll(ADMSYS_ADM_ACTION_COLOR, strtmp);
 		#else
-			SendMessageToAdmins(4, ADMSYS_DEFAULT_COLOR, strtmp);
+			SendMessageToAdmins(4, ADMSYS_ADM_ACTION_COLOR, strtmp);
 		#endif
 	}
 	return 1;
@@ -2704,9 +2905,9 @@ admsys_cmd_setweather(playerid, params[])
 	if(IsPlayerAdminEx(playerid, 5))
 	{
 		if(admsys_isnull(params) || !admsys_IsNumeric(params))
-			return SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, "Use: /setweather [weather]");
+			return SendClientMessage(playerid, ADMSYS_CMD_HELPER_COLOR, "Use: /setweather [weather]");
 		params[0] = strval(params);
-		if(!(0 <= params[0] <= 20)) return SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, "Weather ID should be from 0 to 20");
+		if(!(0 <= params[0] <= 20)) return SendClientMessage(playerid, ADMSYS_ERROR_COLOR, "Weather ID must be from 0 to 20");
 		SetWeather(params[0]);
 		#if defined foreach
 		foreach(new i : Player)
@@ -2720,9 +2921,9 @@ admsys_cmd_setweather(playerid, params[])
 		GetPlayerName(playerid, strname, sizeof strname);
 		format(strtmp, sizeof strtmp, "Administrator %s changed the weather to %d", strname, params[0]);
 		#if ADMSYS_SEND_ACTION_MSGS_TO_ALL
-			SendClientMessageToAll(ADMSYS_DEFAULT_COLOR, strtmp);
+			SendClientMessageToAll(ADMSYS_ADM_ACTION_COLOR, strtmp);
 		#else
-			SendMessageToAdmins(5, ADMSYS_DEFAULT_COLOR, strtmp);
+			SendMessageToAdmins(5, ADMSYS_ADM_ACTION_COLOR, strtmp);
 		#endif
 	}
 	return 1;
@@ -2757,7 +2958,7 @@ admsys_cmd_getall(playerid, const params[])
 		static strtmp[67], strname[MAX_PLAYER_NAME + 1];
 		GetPlayerName(playerid, strname, sizeof strname);
 		format(strtmp, sizeof strtmp, "Administrator %s teleported all to himself", strname);
-		SendClientMessageToAll(ADMSYS_DEFAULT_COLOR, strtmp);
+		SendClientMessageToAll(ADMSYS_ADM_ACTION_COLOR, strtmp);
 	}
 	return 1;
 }
@@ -2768,9 +2969,9 @@ admsys_cmd_settime(playerid, params[])
 	if(IsPlayerAdminEx(playerid, 5))
 	{
 		if(admsys_isnull(params) || !admsys_IsNumeric(params))
-			return SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, "Use: /settime [hour]");
+			return SendClientMessage(playerid, ADMSYS_CMD_HELPER_COLOR, "Use: /settime [hour]");
 		params[0] = strval(params);
-		if(!(0 <= params[0] <= 23)) return SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, "The hour must be between 0 and 23");
+		if(!(0 <= params[0] <= 23)) return SendClientMessage(playerid, ADMSYS_ERROR_COLOR, "The hour must be between 0 and 23");
 		SetWorldTime(params[0]);
 		#if defined foreach
 		foreach(new i : Player)
@@ -2784,9 +2985,9 @@ admsys_cmd_settime(playerid, params[])
 		GetPlayerName(playerid, strname, sizeof strname);
 		format(strtmp, sizeof strtmp, "Administrator %s changed the time to %d hours", strname, params[0]);
 		#if ADMSYS_SEND_ACTION_MSGS_TO_ALL
-			SendClientMessageToAll(ADMSYS_DEFAULT_COLOR, strtmp);
+			SendClientMessageToAll(ADMSYS_ADM_ACTION_COLOR, strtmp);
 		#else
-			SendMessageToAdmins(5, ADMSYS_DEFAULT_COLOR, strtmp);
+			SendMessageToAdmins(5, ADMSYS_ADM_ACTION_COLOR, strtmp);
 		#endif
 	}
 	return 1;
@@ -2800,16 +3001,16 @@ admsys_cmd_destroyveh(playerid, params[])
 	{
 		if(admsys_isnull(params))
 		{
-			if(!IsPlayerInAnyVehicle(playerid)) return SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, "You are not in vehicle");
+			if(!IsPlayerInAnyVehicle(playerid)) return SendClientMessage(playerid, ADMSYS_ERROR_COLOR, "You are not in vehicle");
 			params[0] = GetPlayerVehicleID(playerid);
 		}
 		else
 		{
 			if(!admsys_IsNumeric(params))
-				return SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, "Use: /destroyveh [vehicle id]");
+				return SendClientMessage(playerid, ADMSYS_CMD_HELPER_COLOR, "Use: /destroyveh [vehicle id]");
 			params[0] = strval(params);
 			if(GetVehicleModel(params[0]) <= 0)
-				return SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, "Vehicle is not found");
+				return SendClientMessage(playerid, ADMSYS_ERROR_COLOR, "Vehicle is not found");
 		}
 		static strtmp[26];
 		DestroyVehicle(params[0]);
@@ -2826,17 +3027,17 @@ admsys_cmd_veh(playerid, const params[])
 	if(IsPlayerAdminEx(playerid, 5))
 	{
 		if(IsPlayerSpectating(playerid))
-			return SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, "You are in spectator mode");
+			return SendClientMessage(playerid, ADMSYS_ERROR_COLOR, "You are in spectator mode");
 		if(admsys_isnull(params))
-			return SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, "Use: /veh [vehicle id] [color 1] [color 2]");
+			return SendClientMessage(playerid, ADMSYS_CMD_HELPER_COLOR, "Use: /veh [vehicle id] [color 1] [color 2]");
 		static strtmp[48];
 		new pos, oldpos;
 		while(params[pos] > ' ') pos++;
 		strmid(strtmp, params, 0, pos);
 		if(!admsys_IsNumeric(strtmp))
-			return SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, "Use: /veh [vehicle id] [color 1] [color 2]");
+			return SendClientMessage(playerid, ADMSYS_CMD_HELPER_COLOR, "Use: /veh [vehicle id] [color 1] [color 2]");
 		new gveh = strval(strtmp);
-		if(!(400 <= gveh <= 611)) return SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, "Use the vehicle ID from 400 to 611");
+		if(!(400 <= gveh <= 611)) return SendClientMessage(playerid, ADMSYS_ERROR_COLOR, "Vehicle ID must be from 400 to 611");
 		while(params[pos] == ' ') pos++;
 		oldpos = pos;
 		new gcolor1, gcolor2;
@@ -2850,19 +3051,19 @@ admsys_cmd_veh(playerid, const params[])
 			while(params[pos] > ' ') pos++;
 			strmid(strtmp, params, oldpos, pos);
 			if(!admsys_IsNumeric(strtmp))
-				return SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, "Use: /veh [vehicle id] [color 1] [color 2]");
+				return SendClientMessage(playerid, ADMSYS_CMD_HELPER_COLOR, "Use: /veh [vehicle id] [color 1] [color 2]");
 			gcolor1 = strval(strtmp);
 			if(!(0 <= gcolor1 <= 255))
-				return SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, "Use the color 1 from 0 to 255");
+				return SendClientMessage(playerid, ADMSYS_ERROR_COLOR, "Color 1 must be from 0 to 255");
 			while(params[pos] == ' ') pos++;
 			oldpos = pos;
 			while(params[pos] > ' ') pos++;
 			strmid(strtmp, params, oldpos, pos);
 			if(params[oldpos] == '\0' || !admsys_IsNumeric(strtmp))
-				return SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, "Use: /veh [vehicle id] [color 1] [color 2]");
+				return SendClientMessage(playerid, ADMSYS_CMD_HELPER_COLOR, "Use: /veh [vehicle id] [color 1] [color 2]");
 			gcolor2 = strval(strtmp);
 			if(!(0 <= gcolor2 <= 255))
-				return SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, "Use the color 2 from 0 to 255");
+				return SendClientMessage(playerid, ADMSYS_ERROR_COLOR, "Color 2 must be from 0 to 255");
 		}
 		new vid, Float:pX, Float:pY, Float:pZ, Float:pAngle;
 		GetPlayerPos(playerid, pX, pY, pZ);
@@ -2883,7 +3084,7 @@ admsys_cmd_skick(playerid, const params[])
 {
 	if(IsPlayerAdminEx(playerid, 5))
 	{
-		if(admsys_isnull(params)) return SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, "Use: /skick [id]");
+		if(admsys_isnull(params)) return SendClientMessage(playerid, ADMSYS_CMD_HELPER_COLOR, "Use: /skick [id]");
 		static strtmp2[10];
 		for(new i = 1, strtmp[32], pos, oldpos, giveid, j; i <= ADMSYS_MAX_GIVE_PLAYERS_IN_CMD; i++)
 		{
@@ -2904,14 +3105,14 @@ admsys_cmd_skick(playerid, const params[])
 							strcat(strtmp, strtmp2);
 						}
 					}
-					return SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, strtmp);
+					return SendClientMessage(playerid, ADMSYS_CMD_HELPER_COLOR, strtmp);
 				}
 				giveid = strval(strtmp);
 				if(!IsPlayerConnected(giveid))
 				{
 					if(i == 1) strtmp = "Player is not found";
 					else format(strtmp, sizeof strtmp, "Player %d is not found", i);
-					SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, strtmp);
+					SendClientMessage(playerid, ADMSYS_ERROR_COLOR, strtmp);
 				}
 				else
 				{
@@ -2930,7 +3131,7 @@ admsys_cmd_sban(playerid, const params[])
 {
 	if(IsPlayerAdminEx(playerid, 5))
 	{
-		if(admsys_isnull(params)) return SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, "Use: /sban [id]");
+		if(admsys_isnull(params)) return SendClientMessage(playerid, ADMSYS_CMD_HELPER_COLOR, "Use: /sban [id]");
 		static strtmp2[10];
 		for(new i = 1, strtmp[32], pos, oldpos, giveid, j; i <= ADMSYS_MAX_GIVE_PLAYERS_IN_CMD; i++)
 		{
@@ -2951,14 +3152,14 @@ admsys_cmd_sban(playerid, const params[])
 							strcat(strtmp, strtmp2);
 						}
 					}
-					return SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, strtmp);
+					return SendClientMessage(playerid, ADMSYS_CMD_HELPER_COLOR, strtmp);
 				}
 				giveid = strval(strtmp);
 				if(!IsPlayerConnected(giveid))
 				{
 					if(i == 1) strtmp = "Player is not found";
 					else format(strtmp, sizeof strtmp, "Player %d is not found", i);
-					SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, strtmp);
+					SendClientMessage(playerid, ADMSYS_ERROR_COLOR, strtmp);
 				}
 				else
 				{
@@ -3065,13 +3266,34 @@ stock SendMessageToAdmins(lvl, color, const msg[])
 
 static stock admsys_IsNumeric(const string[])
 {
-	new length = strlen(string);
-	if(length == 0) return 0;
-	for(new i; i < length; i++)
+	new ret;
+	for(new i, l = strlen(string); i < l; i++)
 	{
-		if(!('0' <= string[i] <= '9' || i == 0 && (string[i] == '-' || string[i] == '+'))) return 0;
+		if('0' <= string[i] <= '9') ret = 1;
+		else if(i != 0 || string[0] != '-') return 0;
 	}
-	return 1;
+	return ret;
+}
+
+static stock admsys_IsNumericEx(const string[])
+{
+	new ret;
+	for(new i, c, l = strlen(string); i < l; i++)
+	{
+		if('0' <= string[i] <= '9') ret = 1;
+		else if(string[i] == '.')
+		{
+			if(ret)
+			{
+				c++;
+				if(c > 1) return 0;
+				ret = 0;
+			}
+			else return 0;
+		}
+		else if(i != 0 || string[0] != '-') return 0;
+	}
+	return ret;
 }
 
 static IsPlayerSpectating(playerid) return IsPlayerConnected(AdmSysInfo[playerid][asSpecID]);
@@ -3079,11 +3301,11 @@ static IsPlayerSpectating(playerid) return IsPlayerConnected(AdmSysInfo[playerid
 static StartSpectating(playerid, specid)
 {
 	if(!IsPlayerConnected(playerid) || !IsPlayerConnected(specid)) return 0;
-	if(playerid == specid) return SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, "You can't spectate yourself");
-	if(IsPlayerSpectating(specid)) return SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, "Player is in spectator mode");
+	if(playerid == specid) return SendClientMessage(playerid, ADMSYS_ERROR_COLOR, "You can't spectate yourself");
+	if(IsPlayerSpectating(specid)) return SendClientMessage(playerid, ADMSYS_ERROR_COLOR, "Player is in spectator mode");
 	if(AdmSysInfo[playerid][asSpecID] == specid) return UpdateSpectating(playerid);
 	if(!AdmSysInfo[specid][asIsSpawned] && !AdmSysInfo[specid][asIsDead])
-		return SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, "Player is not spawned");
+		return SendClientMessage(playerid, ADMSYS_ERROR_COLOR, "Player is not spawned");
 	if(!IsPlayerSpectating(playerid))
 	{
 		for(new i = 12; i >= 0; --i)
@@ -3097,7 +3319,7 @@ static StartSpectating(playerid, specid)
 	}
 	AdmSysInfo[playerid][asLastSpecID] = AdmSysInfo[playerid][asSpecID];
 	TogglePlayerSpectating(playerid, 1);
-	if(AdmSysInfo[specid][asIsDead]) SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, "Player has died");
+	if(AdmSysInfo[specid][asIsDead]) SendClientMessage(playerid, ADMSYS_ERROR_COLOR, "Player has died");
 	SetPlayerInterior(playerid, GetPlayerInterior(specid));
 	SetPlayerVirtualWorld(playerid, GetPlayerVirtualWorld(specid));
 	if(IsPlayerInAnyVehicle(specid)) PlayerSpectateVehicle(playerid, GetPlayerVehicleID(specid));
@@ -3111,7 +3333,7 @@ static UpdateSpectating(playerid)
 {
 	if(!IsPlayerConnected(playerid)) return 0;
 	if(AdmSysInfo[playerid][asSpecID] == INVALID_PLAYER_ID)
-		return SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, "You are not in spectator mode");
+		return SendClientMessage(playerid, ADMSYS_ERROR_COLOR, "You are not in spectator mode");
 	if(!IsPlayerConnected(AdmSysInfo[playerid][asSpecID])) return StopSpectating(playerid);
 	TogglePlayerSpectating(playerid, 1);
 	SetPlayerInterior(playerid, GetPlayerInterior(AdmSysInfo[playerid][asSpecID]));
@@ -3126,7 +3348,7 @@ static StopSpectating(playerid)
 {
 	if(!IsPlayerConnected(playerid)) return 0;
 	if(AdmSysInfo[playerid][asSpecID] == INVALID_PLAYER_ID)
-		return SendClientMessage(playerid, ADMSYS_DEFAULT_COLOR, "You are not in spectator mode");
+		return SendClientMessage(playerid, ADMSYS_ERROR_COLOR, "You are not in spectator mode");
 	if(AdmSysInfo[playerid][asLastSpecID] == INVALID_PLAYER_ID || AdmSysInfo[playerid][asLastSpecID] == AdmSysInfo[playerid][asSpecID])
 	{
 		AdmSysInfo[playerid][asSpecID] = INVALID_PLAYER_ID;
@@ -3143,11 +3365,20 @@ static StopSpectating(playerid)
 	return 1;
 }
 
-#undef ADMSYS_SEND_ACTION_MSGS_TO_ALL
-#undef ADMSYS_SEND_CONNECT_MSGS_TO_ADM
+#if ADMSYS_SEND_CONNECT_MSGS_TO_ADM
+	#undef ADMSYS_CONNECT_MSG_COLOR
+#endif
+
 #undef ADMSYS_SHOW_KILL_LIST_FOR_ADM
+#undef ADMSYS_SEND_CONNECT_MSGS_TO_ADM
+#undef ADMSYS_SEND_ACTION_MSGS_TO_ALL
 
 #undef ADMSYS_DEFAULT_COLOR
+#undef ADMSYS_ADM_CHAT_COLOR
+#undef ADMSYS_ADM_ACTION_COLOR
+#undef ADMSYS_REPORT_COLOR
+#undef ADMSYS_CMD_HELPER_COLOR
+#undef ADMSYS_ERROR_COLOR
 
 #undef ADMSYS_MAX_WARNS
 #undef ADMSYS_MAX_TAB_INPUT
