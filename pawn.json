@@ -1,7 +1,7 @@
 {
 	"user": "NexiusTailer",
 	"repo": "Admin-System",
-	"dev_dependencies": ["karimcambridge/samp-foreach"],
+	"dev_dependencies": ["Open-GTO/foreach"],
 	"builds":
 	[
 		{
