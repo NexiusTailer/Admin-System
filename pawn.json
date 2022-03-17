@@ -1,6 +1,7 @@
 {
 	"user": "NexiusTailer",
 	"repo": "Admin-System",
+	"dev_dependencies": ["karimcambridge/samp-foreach"],
 	"builds":
 	[
 		{
