@@ -99,7 +99,8 @@ Parameters:
 playerid - The ID of the player who will be banned
 gaveid - The ID of the player who gave a ban
 sban - If the ban is silent (true) or not (false)
-
+```
+```
 This callback does not return any values
 ```
 
@@ -109,7 +110,8 @@ Parameters:
 playerid - The ID of the player who will be kicked
 gaveid - The ID of the player who gave a kick
 skick - If the kick is silent (true) or not (false)
-
+```
+```
 This callback does not return any values
 ```
 
@@ -119,7 +121,8 @@ Parameters:
 playerid - The ID of the player who will be warned
 gaveid - The ID of the player who gave a warn
 count - The amount of warnings that 'playerid' have at the moment (including last given)
-
+```
+```
 This callback does not return any values
 ```
 
@@ -128,7 +131,8 @@ This callback does not return any values
 Parameters:
 playerid - The ID of the player whose admin level we want to check
 lvl - Player's admin level we check (if not specified, will be equal to 1)
-
+```
+```
 Returns 1 if the player have the admin level equal to or greater than specified in the 'lvl'
 Returns 0 if the player does not have this admin level
 ```
@@ -137,7 +141,8 @@ Returns 0 if the player does not have this admin level
 ```
 Parameters:
 playerid - The ID of the player whose admin level we want to get
-
+```
+```
 Returns the admin level of the specified player
 ```
 
@@ -146,7 +151,8 @@ Returns the admin level of the specified player
 Parameters:
 playerid - The ID of the player for which you need to set the admin level
 lvl - The admin level you want to set to the player
-
+```
+```
 Returns 1 if the function executed successfully
 Returns 0 if the specified player is not connected
 Returns -1 if the level is entered incorrectly
@@ -158,7 +164,8 @@ Parameters:
 lvl - The admin level required to receive this message
 color - The color of the message which will be sent
 msg - The string with the message
-
+```
+```
 Always returns 1
 ```
 
@@ -166,7 +173,8 @@ Always returns 1
 ```
 Parameters:
 playerid - The ID of the player whose remaining mute time you want to know
-
+```
+```
 Returns the remained time of mute for the specified player in seconds (0 - is not muted)
 ```
 
@@ -175,7 +183,8 @@ Returns the remained time of mute for the specified player in seconds (0 - is no
 Parameters:
 playerid - The ID of the player for which you need to set the mute time
 time - The mute time (in seconds) you need to set to the player
-
+```
+```
 Returns 1 if the function executed successfully
 Returns 0 if the specified player is not connected
 Returns -1 if the time is entered incorrectly
@@ -185,7 +194,8 @@ Returns -1 if the time is entered incorrectly
 ```
 Parameters:
 playerid - The ID of the player which you want to add to the list of suspected
-
+```
+```
 Returns 1 if the function executed successfully
 Returns 0 if the specified player is not connected
 ```
@@ -194,7 +204,8 @@ Returns 0 if the specified player is not connected
 ```
 Parameters:
 playerid - The ID of the player which should be removed from the list of suspected
-
+```
+```
 Returns 1 if the function executed successfully
 Returns 0 if the specified player is not connected
 ```
