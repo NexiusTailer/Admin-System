@@ -1,4 +1,4 @@
-# [Admin System](http://lightcode.ru/showthread.php?t=113051)
+# Admin System
 
 This is the administration system that has a lot of opportunities and very simple and clear in use at the same time.
 
