@@ -1,4 +1,4 @@
-# Admin System
+# [Admin System](https://pawno.su/showthread.php?t=113051)
 
 This is the administration system that has a lot of opportunities and very simple and clear in use at the same time.
 
