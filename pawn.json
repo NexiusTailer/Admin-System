@@ -6,7 +6,7 @@
 	[
 		{
 			"name": "english",
-			"input": "English/admsys.inc",
+			"input": "v2.8/English/admsys.inc",
 			"compiler":
 			{
 				"version": "3.10.8"
@@ -14,7 +14,15 @@
 		},
 		{
 			"name": "russian",
-			"input": "Russian/admsys.inc",
+			"input": "v2.8/Russian/admsys.inc",
+			"compiler":
+			{
+				"version": "3.10.8"
+			}
+		},
+		{
+			"name": "georgian",
+			"input": "v2.8/Georgian/admsys.inc",
 			"compiler":
 			{
 				"version": "3.10.8"
