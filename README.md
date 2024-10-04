@@ -217,4 +217,5 @@ Returns the number of removed players from the list
 
 ## Thanks
 DeimoS, \_leon_lacartez_, Kolor4dO - ideas and suggestions  
-Magic_York, Vitalik_Gonsor, RobertoYork, TheHero, Error4o4 - testing
+Magic_York, Vitalik_Gonsor, RobertoYork, TheHero, Error4o4 - testing  
+Lasho4 - Georgian translation

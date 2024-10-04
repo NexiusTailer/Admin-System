@@ -223,11 +223,11 @@ static
 	AdmSysInfo[MAX_PLAYERS][asInfo],
 	SuspectList[ADMSYS_MAX_SUSPECTS_IN_TABLE] = {INVALID_PLAYER_ID, ...},
 
-	AdmSys1LvlCmdsStr[293],
+	AdmSys1LvlCmdsStr[306],
 	AdmSys2LvlCmdsStr[398],
-	AdmSys3LvlCmdsStr[393],
+	AdmSys3LvlCmdsStr[400],
 	AdmSys4LvlCmdsStr[516],
-	AdmSys5LvlCmdsStr[262];
+	AdmSys5LvlCmdsStr[270];
 
 forward OnPlayerBan(playerid, gaveid, bool:sban);
 forward OnPlayerKick(playerid, gaveid, bool:skick);
@@ -1559,7 +1559,7 @@ admsys_cmd_apanel(playerid, const params[])
 	#pragma unused params
 	if(IsPlayerAdminEx(playerid))
 	{
-		static strtmp[382];
+		static strtmp[385];
 		strtmp[0] = EOS;
 		strcat(strtmp, "Admin Chat\nAdmin Brdzanebebis Daxmareba\nOnline Administratorebis Naxva");
 		if(IsPlayerAdminEx(playerid, 2)) strcat(strtmp, "\nMankanis Darespawneba\n\
