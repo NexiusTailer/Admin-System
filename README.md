@@ -19,7 +19,7 @@ The commands will work on any cmd processor! (except rCmd).
 
 `/report` *[text]* - send an question/complaint to administration
 
-#### Level 1
+<details><summary>Level 1</summary>
 `/achat` *[text]* - Admin chat  
 `/ahelp` - Help with admin commands  
 `/showstats` *[id]* - Show player's statistics  
@@ -27,8 +27,9 @@ The commands will work on any cmd processor! (except rCmd).
 `/apanel` - Admin panel with all available commands  
 `/admins` - List of administrators online  
 `/eject` *[id]* - Remove player from vehicle
+</details>
 
-#### Level 2
+<details><summary>Level 2</summary>
 `/spec` *[id]* - Start spectate player  
 `/spawnveh` *[vehicle id]* - Teleport vehicle to respawn  
 `/(un)mute` *[id]* *[time]* *[reason]* - Mute/unmute player  
@@ -38,8 +39,9 @@ The commands will work on any cmd processor! (except rCmd).
 `/(un)freeze` *[id]* - Freeze/unfreeze player  
 `/slap` *[id]* *[reason]* - Slap player  
 `/goto` *[id]* - Teleport to player
+</details>
 
-#### Level 3
+<details><summary>Level 3</summary>
 `/suspectlist` - List of suspected players  
 `/gethere` *[id]* - Teleport player to yourself  
 `/gotoveh` *[vehicle id]* - Teleport to vehicle  
@@ -50,8 +52,9 @@ The commands will work on any cmd processor! (except rCmd).
 `/unwarn` *[id]* - Remove warn from player  
 `/banip` *[IP]* - Block IP address  
 `/cc` - Clear chat
+</details>
 
-#### Level 4
+<details><summary>Level 4</summary>
 `/sethealth` *[id]* *[health]* - Set health to player  
 `/setarmour` *[id]* *[armour]* - Set armour to player  
 `/setmoney` *[id]* *[money]* - Set money to player  
@@ -63,8 +66,9 @@ The commands will work on any cmd processor! (except rCmd).
 `/giveweapon` *[id]* *[weapon]* *[ammo]* - Give weapon to player  
 `/repairveh` *[vehicle id]* - Repair vehicle  
 `/unbanip` *[IP]* - Unblock IP address
+</details>
 
-#### Level 5
+<details><summary>Level 5</summary>
 `/getall` - Teleport all to yourself  
 `/setweather` *[number]* - Set weather  
 `/settime` *[hour]* - Set time of day  
@@ -72,6 +76,7 @@ The commands will work on any cmd processor! (except rCmd).
 `/veh` *[vehicle id]* *[color 1]* *[color 2]* - Create vehicle  
 `/sban` *[id]* - Silent ban  
 `/skick` *[id]* - Silent kick
+</details>
 
 ## How to install
 Simply install to your project:
