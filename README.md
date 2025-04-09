@@ -19,63 +19,73 @@ The commands will work on any cmd processor! (except rCmd).
 
 `/report` *[text]* - send an question/complaint to administration
 
-<details><summary>Level 1</summary>
-`/achat` *[text]* - Admin chat  
-`/ahelp` - Help with admin commands  
-`/showstats` *[id]* - Show player's statistics  
-`/answer` *[id]* *[text]* - Respond on player's report  
-`/apanel` - Admin panel with all available commands  
-`/admins` - List of administrators online  
-`/eject` *[id]* - Remove player from vehicle
+<details>
+  <summary>Level 1</summary>
+
+  `/achat` *[text]* - Admin chat  
+  `/ahelp` - Help with admin commands  
+  `/showstats` *[id]* - Show player's statistics  
+  `/answer` *[id]* *[text]* - Respond on player's report  
+  `/apanel` - Admin panel with all available commands  
+  `/admins` - List of administrators online  
+  `/eject` *[id]* - Remove player from vehicle
 </details>
 
-<details><summary>Level 2</summary>
-`/spec` *[id]* - Start spectate player  
-`/spawnveh` *[vehicle id]* - Teleport vehicle to respawn  
-`/(un)mute` *[id]* *[time]* *[reason]* - Mute/unmute player  
-`/asay` *[text]* - Message: `Administrator: [text]`  
-`/warn` *[id]* *[reason]* - Give warn to player  
-`/kick` [id] *[reason]* - Kick player from the server  
-`/(un)freeze` *[id]* - Freeze/unfreeze player  
-`/slap` *[id]* *[reason]* - Slap player  
-`/goto` *[id]* - Teleport to player
+<details>
+  <summary>Level 2</summary>
+
+  `/spec` *[id]* - Start spectate player  
+  `/spawnveh` *[vehicle id]* - Teleport vehicle to respawn  
+  `/(un)mute` *[id]* *[time]* *[reason]* - Mute/unmute player  
+  `/asay` *[text]* - Message: `Administrator: [text]`  
+  `/warn` *[id]* *[reason]* - Give warn to player  
+  `/kick` [id] *[reason]* - Kick player from the server  
+  `/(un)freeze` *[id]* - Freeze/unfreeze player  
+  `/slap` *[id]* *[reason]* - Slap player  
+  `/goto` *[id]* - Teleport to player
 </details>
 
-<details><summary>Level 3</summary>
-`/suspectlist` - List of suspected players  
-`/gethere` *[id]* - Teleport player to yourself  
-`/gotoveh` *[vehicle id]* - Teleport to vehicle  
-`/gotopos` *[x]* *[y]* *[z]* - Teleport to position  
-`/ban` *[id]* *[reason]*- Ban player's account  
-`/gmtest` *[id]* - Check for infinite health  
-`/spawn` *[id]* - Teleport player to respawn  
-`/unwarn` *[id]* - Remove warn from player  
-`/banip` *[IP]* - Block IP address  
-`/cc` - Clear chat
+<details>
+  <summary>Level 3</summary>
+
+  `/suspectlist` - List of suspected players  
+  `/gethere` *[id]* - Teleport player to yourself  
+  `/gotoveh` *[vehicle id]* - Teleport to vehicle  
+  `/gotopos` *[x]* *[y]* *[z]* - Teleport to position  
+  `/ban` *[id]* *[reason]*- Ban player's account  
+  `/gmtest` *[id]* - Check for infinite health  
+  `/spawn` *[id]* - Teleport player to respawn  
+  `/unwarn` *[id]* - Remove warn from player  
+  `/banip` *[IP]* - Block IP address  
+  `/cc` - Clear chat
 </details>
 
-<details><summary>Level 4</summary>
-`/sethealth` *[id]* *[health]* - Set health to player  
-`/setarmour` *[id]* *[armour]* - Set armour to player  
-`/setmoney` *[id]* *[money]* - Set money to player  
-`/givemoney` *[id]* *[money]* - Give money to player  
-`/setscore` *[id]* *[score]* - Set score to player  
-`/setskin` *[id]* *[skin id]* - Set skin to player  
-`/setint` *[id]* *[interior]* - Set interior to player  
-`/setvw` *[id]* *[number]* - Set virtual world to player  
-`/giveweapon` *[id]* *[weapon]* *[ammo]* - Give weapon to player  
-`/repairveh` *[vehicle id]* - Repair vehicle  
-`/unbanip` *[IP]* - Unblock IP address
+<details>
+  <summary>Level 4</summary>
+
+  `/sethealth` *[id]* *[health]* - Set health to player  
+  `/setarmour` *[id]* *[armour]* - Set armour to player  
+  `/setmoney` *[id]* *[money]* - Set money to player  
+  `/givemoney` *[id]* *[money]* - Give money to player  
+  `/setscore` *[id]* *[score]* - Set score to player  
+  `/setskin` *[id]* *[skin id]* - Set skin to player  
+  `/setint` *[id]* *[interior]* - Set interior to player  
+  `/setvw` *[id]* *[number]* - Set virtual world to player  
+  `/giveweapon` *[id]* *[weapon]* *[ammo]* - Give weapon to player  
+  `/repairveh` *[vehicle id]* - Repair vehicle  
+  `/unbanip` *[IP]* - Unblock IP address
 </details>
 
-<details><summary>Level 5</summary>
-`/getall` - Teleport all to yourself  
-`/setweather` *[number]* - Set weather  
-`/settime` *[hour]* - Set time of day  
-`/destroyveh` *[vehicle id]* - Destroy vehicle  
-`/veh` *[vehicle id]* *[color 1]* *[color 2]* - Create vehicle  
-`/sban` *[id]* - Silent ban  
-`/skick` *[id]* - Silent kick
+<details>
+  <summary>Level 5</summary>
+
+  `/getall` - Teleport all to yourself  
+  `/setweather` *[number]* - Set weather  
+  `/settime` *[hour]* - Set time of day  
+  `/destroyveh` *[vehicle id]* - Destroy vehicle  
+  `/veh` *[vehicle id]* *[color 1]* *[color 2]* - Create vehicle  
+  `/sban` *[id]* - Silent ban  
+  `/skick` *[id]* - Silent kick
 </details>
 
 ## How to install
